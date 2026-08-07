@@ -1,0 +1,45 @@
+name: vunaflow_app
+description: VunaFlow - Empowering farmers with simple, secure, and efficient agricultural financing.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # State management
+  provider: ^6.1.2
+
+  # Networking
+  http: ^1.2.1
+
+  # Local persistence (auth token)
+  shared_preferences: ^2.2.3
+
+  # Charts for analytics screens
+  fl_chart: ^0.68.0
+
+  # File / image picking for document upload
+  file_picker: ^8.0.3
+  image_picker: ^1.1.2
+
+  # Opening uploaded document files (view/download) from staff and client screens
+  url_launcher: ^6.3.0
+
+  # Nice fonts
+  google_fonts: ^6.2.1
+
+  # Date formatting
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend Express Server (Node.js)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "program": "${workspaceFolder}/backend/server.js",
+      "restart": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Flutter Frontend (Chrome Web)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend/vunaflow_app",
+      "program": "${workspaceFolder}/frontend/vunaflow_app/lib/main.dart",
+      "deviceId": "chrome"
+    },
+    {
+      "name": "Flutter Frontend (Edge Web)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend/vunaflow_app",
+      "program": "${workspaceFolder}/frontend/vunaflow_app/lib/main.dart",
+      "deviceId": "edge"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Backend + Flutter Web)",
+      "configurations": ["Backend Express Server (Node.js)", "Flutter Frontend (Chrome Web)"]
+    }
+  ]
+}
