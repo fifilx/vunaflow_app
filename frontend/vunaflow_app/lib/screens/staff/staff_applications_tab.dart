@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logout_button.dart';
+import '../../widgets/theme_toggle_button.dart';
 import 'staff_loan_review_screen.dart';
 
 class StaffApplicationsTab extends StatefulWidget {
@@ -81,11 +82,22 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark ? const Color(0xFF0C1610) : AppColors.parchment2;
+    final appBarBg = isDark ? const Color(0xFF0F1B14) : AppColors.shamba900;
+    final cardBg = isDark ? const Color(0xFF14241B) : Colors.white;
+    final cardBorder = isDark ? const Color(0xFF223C2D) : AppColors.line;
+    final textPrimary = isDark ? const Color(0xFFF4F6F0) : AppColors.ink;
+    final textMuted = isDark ? const Color(0xFF9EBAA9) : AppColors.inkSoft;
+    final chipSelected = isDark ? const Color(0xFF1B3D2A) : AppColors.shamba800;
+    final chipUnselected = isDark ? const Color(0xFF14241B) : Colors.white;
+    final chipBorderUnselected = isDark ? const Color(0xFF223C2D) : AppColors.line;
 
     return Scaffold(
-      backgroundColor: AppColors.parchment2,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: AppColors.shamba900,
+        backgroundColor: appBarBg,
         foregroundColor: AppColors.parchment,
         title: Row(
           children: [
@@ -99,7 +111,7 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 8),
             child: Center(
               child: Text(
                 'Signed in as ${user?.fullName ?? ''} (${user?.role})',
@@ -107,6 +119,7 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
               ),
             ),
           ),
+          const ThemeToggleButton(),
           const LogoutButton(),
         ],
       ),
@@ -123,15 +136,15 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                   children: [
                     Text(
                       'Applications',
-                      style: GoogleFonts.fraunces(fontSize: 30, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      style: GoogleFonts.fraunces(fontSize: 30, fontWeight: FontWeight.w600, color: textPrimary),
                     ),
                     ElevatedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('New client'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.ink,
-                        foregroundColor: AppColors.parchment,
+                        backgroundColor: isDark ? const Color(0xFF2ECC71) : AppColors.ink,
+                        foregroundColor: isDark ? const Color(0xFF0C1610) : AppColors.parchment,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                     ),
@@ -141,22 +154,22 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                 // Search row
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardBg,
                     borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: AppColors.line),
+                    border: Border.all(color: cardBorder),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
                   child: Row(
                     children: [
-                      const Icon(Icons.search, color: AppColors.inkFaint, size: 20),
+                      Icon(Icons.search, color: textMuted, size: 20),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: _searchCtrl,
-                          style: GoogleFonts.publicSans(fontSize: 14.5, color: AppColors.ink),
+                          style: GoogleFonts.publicSans(fontSize: 14.5, color: textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Search by client name or email',
-                            hintStyle: GoogleFonts.publicSans(fontSize: 14.5, color: AppColors.inkFaint),
+                            hintStyle: GoogleFonts.publicSans(fontSize: 14.5, color: textMuted),
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
@@ -169,7 +182,7 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                       ),
                       if (_searchCtrl.text.isNotEmpty)
                         IconButton(
-                          icon: const Icon(Icons.close, size: 18, color: AppColors.inkFaint),
+                          icon: Icon(Icons.close, size: 18, color: textMuted),
                           onPressed: () {
                             _searchCtrl.clear();
                             _load();
@@ -196,16 +209,16 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: selected ? AppColors.shamba800 : Colors.white,
+                              color: selected ? chipSelected : chipUnselected,
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: selected ? AppColors.shamba800 : AppColors.line),
+                              border: Border.all(color: selected ? chipSelected : chipBorderUnselected),
                             ),
                             child: Text(
                               opt.$2,
                               style: GoogleFonts.publicSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: selected ? AppColors.parchment : AppColors.inkSoft,
+                                color: selected ? (isDark ? const Color(0xFF6EE7B7) : AppColors.parchment) : textMuted,
                               ),
                             ),
                           ),
@@ -225,7 +238,7 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                               ? Center(
                                   child: Text(
                                     'No applications match this filter yet.',
-                                    style: GoogleFonts.publicSans(fontSize: 14, color: AppColors.inkFaint),
+                                    style: GoogleFonts.publicSans(fontSize: 14, color: textMuted),
                                   ),
                                 )
                               : ListView.builder(
@@ -249,23 +262,18 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                       }
                                     }
 
+                                    final overdueBg = isDark ? const Color(0xFF2A1414) : const Color(0xFFFFF0F0);
+                                    final overdueBorder = isDark ? Colors.red.withValues(alpha: 0.4) : Colors.redAccent.withValues(alpha: 0.5);
+
                                     return Container(
                                       margin: const EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
-                                        color: isOverdue ? const Color(0xFFFFF0F0) : Colors.white,
+                                        color: isOverdue ? overdueBg : cardBg,
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: isOverdue ? Colors.redAccent.withValues(alpha: 0.5) : AppColors.line, width: isOverdue ? 1.5 : 1.0),
-                                        boxShadow: const [
-                                          BoxShadow(
-                                            color: Color.fromRGBO(34, 36, 30, 0.04),
-                                            blurRadius: 2,
-                                            offset: Offset(0, 1),
-                                          ),
-                                          BoxShadow(
-                                            color: Color.fromRGBO(34, 36, 30, 0.06),
-                                            blurRadius: 24,
-                                            offset: Offset(0, 8),
-                                          ),
+                                        border: Border.all(color: isOverdue ? overdueBorder : cardBorder, width: isOverdue ? 1.5 : 1.0),
+                                        boxShadow: isDark ? [] : const [
+                                          BoxShadow(color: Color.fromRGBO(34, 36, 30, 0.04), blurRadius: 2, offset: Offset(0, 1)),
+                                          BoxShadow(color: Color.fromRGBO(34, 36, 30, 0.06), blurRadius: 24, offset: Offset(0, 8)),
                                         ],
                                       ),
                                       child: ListTile(
@@ -282,7 +290,9 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                           width: 42,
                                           height: 42,
                                           decoration: BoxDecoration(
-                                            color: isOverdue ? Colors.red.withValues(alpha: 0.15) : AppColors.parchment2,
+                                            color: isOverdue
+                                                ? Colors.red.withValues(alpha: 0.15)
+                                                : (isDark ? const Color(0xFF1B3D2A) : AppColors.parchment2),
                                             shape: BoxShape.circle,
                                           ),
                                           child: Center(
@@ -291,7 +301,7 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                               style: GoogleFonts.fraunces(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.w600,
-                                                color: isOverdue ? Colors.red : AppColors.shamba700,
+                                                color: isOverdue ? Colors.red : (isDark ? const Color(0xFF34D399) : AppColors.shamba700),
                                               ),
                                             ),
                                           ),
@@ -304,7 +314,7 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                                 style: GoogleFonts.publicSans(
                                                   fontSize: 15.5,
                                                   fontWeight: FontWeight.w700,
-                                                  color: AppColors.ink,
+                                                  color: textPrimary,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -326,10 +336,10 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                           style: GoogleFonts.ibmPlexMono(
                                             fontSize: 12.5,
                                             fontWeight: status == 'disbursed' ? FontWeight.w600 : FontWeight.w400,
-                                            color: isOverdue ? const Color(0xFFC0392B) : AppColors.inkSoft,
+                                            color: isOverdue ? const Color(0xFFC0392B) : textMuted,
                                           ),
                                         ),
-                                        trailing: _buildStatusBadge(status),
+                                        trailing: _buildStatusBadge(status, isDark),
                                       ),
                                     );
                                   },
@@ -344,22 +354,22 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color bg = const Color(0xFFE4EEF1);
-    Color fg = AppColors.sky;
+  Widget _buildStatusBadge(String status, bool isDark) {
+    Color bg = isDark ? const Color(0xFF163040) : const Color(0xFFE4EEF1);
+    Color fg = isDark ? const Color(0xFF7EC8E3) : AppColors.sky;
     IconData icon = Icons.info_outline;
 
     if (status == 'approved') {
-      bg = const Color(0xFFE4EFE6);
-      fg = AppColors.shamba700;
+      bg = isDark ? const Color(0xFF163E27) : const Color(0xFFE4EFE6);
+      fg = isDark ? const Color(0xFF6EE7B7) : AppColors.shamba700;
       icon = Icons.check;
     } else if (status == 'rejected') {
-      bg = const Color(0xFFF6E3DF);
-      fg = AppColors.brick;
+      bg = isDark ? const Color(0xFF3A1A1A) : const Color(0xFFF6E3DF);
+      fg = isDark ? const Color(0xFFFF9B8A) : AppColors.brick;
       icon = Icons.close;
     } else if (status == 'disbursed') {
-      bg = AppColors.goldPale;
-      fg = AppColors.goldDark;
+      bg = isDark ? const Color(0xFF2E2600) : AppColors.goldPale;
+      fg = isDark ? const Color(0xFFFFD700) : AppColors.goldDark;
       icon = Icons.verified;
     }
 
@@ -387,3 +397,4 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
     );
   }
 }
+

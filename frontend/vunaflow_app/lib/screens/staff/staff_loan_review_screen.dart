@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 class StaffLoanReviewScreen extends StatefulWidget {
   final String loanId;
@@ -174,10 +175,17 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
     final history = (_data?['history'] as List<dynamic>?) ?? [];
     final documents = (_data?['documents'] as List<dynamic>?) ?? [];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarBg = isDark ? const Color(0xFF0F1B14) : AppColors.shamba900;
+    final scaffoldBg = isDark ? const Color(0xFF0C1610) : AppColors.parchment2;
+
     if (loan == null) {
       return Scaffold(
-        backgroundColor: AppColors.parchment2,
-        appBar: AppBar(title: const Text('Review Application')),
+        backgroundColor: scaffoldBg,
+        appBar: AppBar(
+          title: const Text('Review Application'),
+          actions: const [ThemeToggleButton()],
+        ),
         body: const Center(child: Text('Loan application not found')),
       );
     }
@@ -189,9 +197,9 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
     final isMobile = MediaQuery.of(context).size.width < 860;
 
     return Scaffold(
-      backgroundColor: AppColors.parchment2,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: AppColors.shamba900,
+        backgroundColor: appBarBg,
         foregroundColor: AppColors.parchment,
         title: Row(
           children: [
@@ -203,6 +211,7 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
             ),
           ],
         ),
+        actions: const [ThemeToggleButton()],
       ),
       body: Center(
         child: ConstrainedBox(

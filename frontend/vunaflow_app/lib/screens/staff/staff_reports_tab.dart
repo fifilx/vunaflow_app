@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logout_button.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 class StaffReportsTab extends StatefulWidget {
   const StaffReportsTab({super.key});
@@ -41,8 +42,12 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(title: const Text('Reports & Analytics'), actions: const [LogoutButton()]),
+      appBar: AppBar(
+        title: const Text('Reports & Analytics'),
+        actions: const [ThemeToggleButton(), LogoutButton()],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -60,12 +65,12 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.5,
                     children: [
-                      _ReportStat(label: 'Total Loans', value: '${_summary?['total_loans'] ?? 0}', color: AppColors.primary),
-                      _ReportStat(label: 'Pending', value: '${_summary?['pending_loans'] ?? 0}', color: AppColors.warning),
-                      _ReportStat(label: 'Approved', value: '${_summary?['approved_loans'] ?? 0}', color: AppColors.success),
-                      _ReportStat(label: 'Rejected', value: '${_summary?['rejected_loans'] ?? 0}', color: AppColors.danger),
-                      _ReportStat(label: 'Disbursed', value: '${_summary?['disbursed_loans'] ?? 0}', color: AppColors.info),
-                      _ReportStat(label: 'Total Clients', value: '${_summary?['total_clients'] ?? 0}', color: AppColors.accentDark),
+                      _ReportStat(label: 'Total Loans', value: '${_summary?['total_loans'] ?? 0}', color: AppColors.primary, isDark: isDark),
+                      _ReportStat(label: 'Pending', value: '${_summary?['pending_loans'] ?? 0}', color: AppColors.warning, isDark: isDark),
+                      _ReportStat(label: 'Approved', value: '${_summary?['approved_loans'] ?? 0}', color: AppColors.success, isDark: isDark),
+                      _ReportStat(label: 'Rejected', value: '${_summary?['rejected_loans'] ?? 0}', color: AppColors.danger, isDark: isDark),
+                      _ReportStat(label: 'Disbursed', value: '${_summary?['disbursed_loans'] ?? 0}', color: AppColors.info, isDark: isDark),
+                      _ReportStat(label: 'Total Clients', value: '${_summary?['total_clients'] ?? 0}', color: AppColors.accentDark, isDark: isDark),
                     ],
                   ),
                   const SizedBox(height: 32),
@@ -73,7 +78,7 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
                   if (_analytics != null) ...[
                     Text('Applications by Month', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
-                    SizedBox(height: 220, child: _MonthlyBarChart(data: _analytics!['applications_by_month'] as List<dynamic>)),
+                    SizedBox(height: 220, child: _MonthlyBarChart(data: _analytics!['applications_by_month'] as List<dynamic>, isDark: isDark)),
                     const SizedBox(height: 32),
 
                     Text('Approved vs Rejected', style: Theme.of(context).textTheme.titleLarge),
@@ -83,12 +88,12 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
 
                     Text('Loan Amounts', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
-                    _LoanAmountsCard(data: _analytics!['loan_amounts'] as Map<String, dynamic>),
+                    _LoanAmountsCard(data: _analytics!['loan_amounts'] as Map<String, dynamic>, isDark: isDark),
                     const SizedBox(height: 32),
 
                     Text('Applications by Branch', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
-                    ..._buildBranchBars(_analytics!['applications_by_branch'] as List<dynamic>),
+                    ..._buildBranchBars(_analytics!['applications_by_branch'] as List<dynamic>, isDark),
                   ],
                 ],
               ),
@@ -96,7 +101,7 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
     );
   }
 
-  List<Widget> _buildBranchBars(List<dynamic> data) {
+  List<Widget> _buildBranchBars(List<dynamic> data, bool isDark) {
     final maxCount = data.fold<int>(1, (m, e) => (int.parse(e['count'].toString())) > m ? int.parse(e['count'].toString()) : m);
     return data.map((e) {
       final count = int.parse(e['count'].toString());
@@ -129,13 +134,18 @@ class _ReportStat extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _ReportStat({required this.label, required this.value, required this.color});
+  final bool isDark;
+  const _ReportStat({required this.label, required this.value, required this.color, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF14241B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF223C2D) : AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -150,20 +160,32 @@ class _ReportStat extends StatelessWidget {
 
 class _MonthlyBarChart extends StatelessWidget {
   final List<dynamic> data;
-  const _MonthlyBarChart({required this.data});
+  final bool isDark;
+  const _MonthlyBarChart({required this.data, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) return const Center(child: Text('No data yet.'));
     final maxY = data.fold<double>(1, (m, e) => double.parse(e['count'].toString()) > m ? double.parse(e['count'].toString()) : m);
+    final gridColor = isDark ? const Color(0xFF223C2D) : Colors.grey.shade200;
 
     return BarChart(
       BarChartData(
         maxY: maxY + 1,
         borderData: FlBorderData(show: false),
-        gridData: const FlGridData(show: true, drawVerticalLine: false),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (v) => FlLine(color: gridColor, strokeWidth: 1),
+        ),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28)),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              getTitlesWidget: (v, m) => Text('${v.toInt()}', style: TextStyle(fontSize: 10, color: isDark ? const Color(0xFF9EBAA9) : Colors.grey)),
+            ),
+          ),
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
@@ -173,14 +195,22 @@ class _MonthlyBarChart extends StatelessWidget {
                 final i = value.toInt();
                 if (i < 0 || i >= data.length) return const SizedBox.shrink();
                 final month = data[i]['month'].toString();
-                return Padding(padding: const EdgeInsets.only(top: 6), child: Text(month.substring(5), style: const TextStyle(fontSize: 10)));
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(month.substring(5), style: TextStyle(fontSize: 10, color: isDark ? const Color(0xFF9EBAA9) : Colors.grey)),
+                );
               },
             ),
           ),
         ),
         barGroups: List.generate(data.length, (i) {
           return BarChartGroupData(x: i, barRods: [
-            BarChartRodData(toY: double.parse(data[i]['count'].toString()), color: AppColors.primary, width: 16, borderRadius: BorderRadius.circular(4)),
+            BarChartRodData(
+              toY: double.parse(data[i]['count'].toString()),
+              color: isDark ? const Color(0xFF34D399) : AppColors.primary,
+              width: 16,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ]);
         }),
       ),
@@ -232,7 +262,8 @@ class _ApprovedVsRejectedChart extends StatelessWidget {
 
 class _LoanAmountsCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  const _LoanAmountsCard({required this.data});
+  final bool isDark;
+  const _LoanAmountsCard({required this.data, required this.isDark});
 
   String _fmt(dynamic v) => 'KSh ${double.parse(v.toString()).toStringAsFixed(0)}';
 
@@ -240,7 +271,11 @@ class _LoanAmountsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF14241B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF223C2D) : AppColors.border),
+      ),
       child: Column(
         children: [
           _row(context, 'Total Amount Requested', _fmt(data['total_amount'])),

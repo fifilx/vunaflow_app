@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logout_button.dart';
+import '../../widgets/theme_toggle_button.dart';
 import '../../utils/validators.dart';
 
 class StaffAdminTab extends StatelessWidget {
@@ -14,7 +15,7 @@ class StaffAdminTab extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin'),
-          actions: const [LogoutButton()],
+          actions: const [ThemeToggleButton(), LogoutButton()],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Staff & Roles'),
