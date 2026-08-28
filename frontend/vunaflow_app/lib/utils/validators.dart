@@ -2,6 +2,68 @@
 /// staff creation, password reset) enforces the same rules consistently.
 library;
 
+import 'package:flutter/services.dart';
+
+/// Formatter that automatically capitalizes the first letter of each word
+/// in real time as the user types (works across Web, Desktop, iOS, and Android).
+class CapitalizeWordsInputFormatter extends TextInputFormatter {
+  const CapitalizeWordsInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final text = newValue.text;
+    final StringBuffer buffer = StringBuffer();
+    bool capitalizeNext = true;
+
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (char == ' ' || char == '-' || char == "'" || char == '.') {
+        buffer.write(char);
+        capitalizeNext = true;
+      } else if (capitalizeNext) {
+        buffer.write(char.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        buffer.write(char);
+      }
+    }
+
+    final formattedText = buffer.toString();
+    return newValue.copyWith(
+      text: formattedText,
+      selection: newValue.selection,
+      composing: TextRange.empty,
+    );
+  }
+}
+
+/// Formatter that capitalizes the first letter of the sentence / input only.
+class CapitalizeFirstLetterFormatter extends TextInputFormatter {
+  const CapitalizeFirstLetterFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final text = newValue.text;
+    final formattedText = text[0].toUpperCase() + (text.length > 1 ? text.substring(1) : '');
+
+    return newValue.copyWith(
+      text: formattedText,
+      selection: newValue.selection,
+      composing: TextRange.empty,
+    );
+  }
+}
+
 /// Validates a Kenyan mobile number. Accepts 07XXXXXXXX, 01XXXXXXXX,
 /// 2547XXXXXXXX, 2541XXXXXXXX, +2547XXXXXXXX, +2541XXXXXXXX (spaces and
 /// dashes are ignored). Returns an error message, or null if valid.

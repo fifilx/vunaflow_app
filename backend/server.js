@@ -66,6 +66,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`🌱 VunaFlow API & Web App listening on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🌱 VunaFlow API & Web App listening on http://0.0.0.0:${PORT}`);
 });

@@ -100,11 +100,14 @@ class _NavBar extends StatelessWidget {
         color: Color(0xFF122318),
         border: Border(bottom: BorderSide(color: Color(0x28FFFFFF))),
       ),
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 48, vertical: 18),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const VunaFlowLogo(size: 36, showWordmark: true),
+          // Logo — shrink slightly on very small screens
+          Flexible(
+            child: VunaFlowLogo(size: isMobile ? 28 : 36, showWordmark: !isMobile || MediaQuery.of(context).size.width > 360),
+          ),
           if (!isMobile)
             Row(
               children: [
@@ -117,35 +120,55 @@ class _NavBar extends StatelessWidget {
                 _NavLink(isSw ? 'Mawasiliano' : 'Contact', onContact),
               ],
             ),
+          // Right actions — on mobile use a compact row that cannot overflow
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Language toggle — icon-only on mobile
               InkWell(
                 onTap: onLanguageToggle,
                 borderRadius: BorderRadius.circular(100),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 8 : 12,
+                    vertical: isMobile ? 6 : 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.gold.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.language, size: 18, color: AppColors.goldPale),
-                      const SizedBox(width: 6),
-                      Text(
-                        isSw ? 'Kiswahili' : 'English',
-                        style: GoogleFonts.publicSans(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.goldPale,
+                      const Icon(Icons.language, size: 16, color: AppColors.goldPale),
+                      if (!isMobile) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          isSw ? 'Kiswahili' : 'English',
+                          style: GoogleFonts.publicSans(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.goldPale,
+                          ),
                         ),
-                      ),
+                      ] else ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          isSw ? 'SW' : 'EN',
+                          style: GoogleFonts.publicSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.goldPale,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isMobile ? 8 : 12),
+              // Client login button
               OutlinedButton(
                 onPressed: () {
                   Navigator.push(
@@ -156,11 +179,20 @@ class _NavBar extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white60),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 10 : 16,
+                    vertical: isMobile ? 7 : 10,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: Size.zero,
                 ),
-                child: Text(isSw ? 'Mkulima' : 'Client login'),
+                child: Text(
+                  isSw ? 'Mkulima' : 'Client',
+                  style: TextStyle(fontSize: isMobile ? 12 : 14),
+                ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: isMobile ? 6 : 10),
+              // Staff login button
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -171,9 +203,17 @@ class _NavBar extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.shamba900,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 10 : 16,
+                    vertical: isMobile ? 7 : 10,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: Size.zero,
                 ),
-                child: Text(isSw ? 'Afisa' : 'Staff login'),
+                child: Text(
+                  isSw ? 'Afisa' : 'Staff',
+                  style: TextStyle(fontSize: isMobile ? 12 : 14),
+                ),
               ),
             ],
           ),
@@ -275,13 +315,17 @@ class _BotanicalHeroSection extends StatelessWidget {
             children: [
               const Icon(Icons.pets, color: AppColors.goldPale, size: 15),
               const SizedBox(width: 6),
-              Text(
-                isSw ? 'RUZUKU NA MKOPO WA MAZAO NA MIFUGO' : 'CROPS & LIVESTOCK FINANCING',
-                style: GoogleFonts.publicSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.goldPale,
-                  letterSpacing: 1.0,
+              Flexible(
+                child: Text(
+                  isSw ? 'RUZUKU NA MKOPO WA MAZAO NA MIFUGO' : 'CROPS & LIVESTOCK FINANCING',
+                  style: GoogleFonts.publicSans(
+                    fontSize: isMobile ? 10.5 : 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.goldPale,
+                    letterSpacing: isMobile ? 0.5 : 1.0,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -1170,23 +1214,51 @@ class _Footer extends StatelessWidget {
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: Color(0x35F5F2E7))),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 20 : 48,
+              vertical: 20,
+            ),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1100),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const VunaFlowLogo(size: 28, showWordmark: true),
-                    Text(
-                      '© 2026 VunaFlow — Digital Agricultural & Livestock Financing Platform',
-                      style: GoogleFonts.ibmPlexMono(
-                        fontSize: 12.5,
-                        color: AppColors.goldPale,
+                child: isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const VunaFlowLogo(size: 26, showWordmark: true),
+                          const SizedBox(height: 10),
+                          Text(
+                            '© 2026 VunaFlow',
+                            style: GoogleFonts.ibmPlexMono(
+                              fontSize: 12,
+                              color: AppColors.goldPale,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Digital Agricultural & Livestock Financing',
+                            style: GoogleFonts.ibmPlexMono(
+                              fontSize: 11,
+                              color: AppColors.goldPale.withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const VunaFlowLogo(size: 28, showWordmark: true),
+                          Text(
+                            '© 2026 VunaFlow — Digital Agricultural & Livestock Financing Platform',
+                            style: GoogleFonts.ibmPlexMono(
+                              fontSize: 12.5,
+                              color: AppColors.goldPale,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),

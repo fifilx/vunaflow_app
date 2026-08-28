@@ -155,6 +155,114 @@ class AppTheme {
       dividerTheme: const DividerThemeData(color: AppColors.line, thickness: 1),
     );
   }
+
+  static ThemeData get dark {
+    const bgDark = Color(0xFF0C1610);
+    const surfaceDark = Color(0xFF14241B);
+    const borderDark = Color(0xFF223C2D);
+    const textLight = Color(0xFFF4F6F0);
+    const textMuted = Color(0xFF9EBAA9);
+
+    final base = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF2ECC71),
+        secondary: AppColors.gold,
+        surface: surfaceDark,
+        error: Color(0xFFE74C3C),
+      ),
+      scaffoldBackgroundColor: bgDark,
+      fontFamily: GoogleFonts.publicSans().fontFamily,
+    );
+
+    return base.copyWith(
+      textTheme: GoogleFonts.publicSansTextTheme(base.textTheme).copyWith(
+        displayLarge: GoogleFonts.fraunces(
+          fontSize: 48,
+          fontWeight: FontWeight.w600,
+          color: textLight,
+          height: 1.05,
+        ),
+        displayMedium: GoogleFonts.fraunces(
+          fontSize: 36,
+          fontWeight: FontWeight.w600,
+          color: textLight,
+          height: 1.1,
+        ),
+        headlineMedium: GoogleFonts.fraunces(
+          fontSize: 26,
+          fontWeight: FontWeight.w600,
+          color: textLight,
+        ),
+        titleLarge: GoogleFonts.fraunces(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: textLight,
+        ),
+        bodyLarge: GoogleFonts.publicSans(fontSize: 16, color: textLight, height: 1.6),
+        bodyMedium: GoogleFonts.publicSans(fontSize: 14.5, color: textMuted, height: 1.5),
+        labelSmall: GoogleFonts.ibmPlexMono(fontSize: 12, color: AppColors.goldPale, fontWeight: FontWeight.w600),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: bgDark,
+        foregroundColor: textLight,
+        elevation: 0,
+        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF2ECC71),
+          foregroundColor: const Color(0xFF0C1610),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+          textStyle: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w700),
+          elevation: 0,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: textLight,
+          side: const BorderSide(color: borderDark, width: 1.2),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+          textStyle: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceDark,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderDark),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: borderDark),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF2ECC71), width: 1.6),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE74C3C)),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: surfaceDark,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: borderDark),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      dividerTheme: const DividerThemeData(color: borderDark, thickness: 1),
+    );
+  }
 }
 
 /// Human-friendly labels for loan status enum values from the backend.

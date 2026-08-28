@@ -4,6 +4,8 @@ import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logout_button.dart';
+import '../../providers/theme_provider.dart';
+import '../../widgets/theme_toggle_button.dart';
 import '../landing_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -62,6 +64,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_data == null) return const Scaffold(body: Center(child: Text('Could not load profile.')));
 
@@ -72,6 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('My Profile'),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())).then((_) => _load()),
@@ -87,10 +93,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Center(
               child: CircleAvatar(
                 radius: 40,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.1),
                 child: Text(
                   (account['full_name'] as String? ?? '?').substring(0, 1).toUpperCase(),
-                  style: const TextStyle(fontSize: 28, color: AppColors.primary, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 28, color: isDark ? const Color(0xFF34D399) : AppColors.primary, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -118,6 +124,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _InfoLine('Headcount', farm['livestock_count']?.toString() ?? 'Not set'),
               _InfoLine('Years Farming', farm['years_farming']?.toString() ?? 'Not set'),
               _InfoLine('Has Collateral', farm['has_collateral'] == true ? 'Yes' : 'No'),
+            ]),
+            const SizedBox(height: 16),
+
+            // Appearance & Theme Section
+            _SectionCard(title: 'Appearance & Theme', children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF133826),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isDark ? 'Dark Mode (Active)' : 'Light Mode (Active)',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: isDark,
+                    activeThumbColor: const Color(0xFF34D399),
+                    onChanged: (val) => context.read<ThemeProvider>().setDarkMode(val),
+                  ),
+                ],
+              ),
             ]),
             if (_advice.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -169,9 +204,14 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF14241B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF223C2D) : AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

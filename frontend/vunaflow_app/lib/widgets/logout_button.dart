@@ -35,10 +35,23 @@ class LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.logout),
-      tooltip: 'Log out',
-      onPressed: () => _confirmAndLogout(context),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF162A1F) : Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark ? const Color(0xFF264634) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.logout_rounded, color: Color(0xFFE74C3C), size: 18),
+        tooltip: 'Log out',
+        padding: const EdgeInsets.all(8),
+        constraints: const BoxConstraints(),
+        onPressed: () => _confirmAndLogout(context),
+      ),
     );
   }
 }

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logout_button.dart';
+import '../../widgets/vunaflow_logo.dart';
+import '../../widgets/theme_toggle_button.dart';
 import 'notifications_screen.dart';
 import 'loan_detail_screen.dart';
+import 'loan_tracking_screen.dart';
 
 class ClientHomeTab extends StatefulWidget {
   const ClientHomeTab({super.key});
@@ -19,7 +20,6 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
   bool _loading = true;
   List<dynamic> _loans = [];
   int _unreadNotifications = 0;
-  double _overpaymentBalance = 0.0;
 
   @override
   void initState() {
@@ -33,125 +33,87 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
       final results = await Future.wait([
         ApiService.get('/api/loans/mine'),
         ApiService.get('/api/notifications'),
-        ApiService.get('/api/profile'),
       ]);
       setState(() {
         _loans = results[0] as List<dynamic>;
         _unreadNotifications = (results[1] as Map<String, dynamic>)['unread_count'] ?? 0;
-        final profile = (results[2] as Map<String, dynamic>)['farmer_profile'];
-        _overpaymentBalance = double.tryParse((profile?['overpayment_balance'] ?? 0).toString()) ?? 0.0;
       });
     } catch (_) {
-      // Keep dashboard usable even if a widget's data fails to load.
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _transferOverpaymentToLoan() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Transfer Credit to Active Loan'),
-        content: Text(
-          'Transfer KSh ${_overpaymentBalance.toStringAsFixed(2)} from your Overpayment Credit balance directly to reduce your active loan balance?',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.shamba900),
-            child: const Text('Confirm Transfer'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final res = await ApiService.post('/api/profile/overpayment/transfer');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res['message'] ?? 'Credit transferred successfully!'), backgroundColor: Colors.green),
-      );
-      _loadData();
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not transfer credit. Please try again.'), backgroundColor: Colors.redAccent),
-        );
-      }
-    }
-  }
-
-  Future<void> _requestRefund() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Request Overpayment Refund'),
-        content: Text(
-          'Submit a refund request for KSh ${_overpaymentBalance.toStringAsFixed(2)}? AFC Branch staff will process the payout to your M-Pesa account.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.shamba900),
-            child: const Text('Request Refund'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final res = await ApiService.post('/api/profile/overpayment/refund');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res['message'] ?? 'Refund request submitted!'), backgroundColor: Colors.green),
-      );
-      _loadData();
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not submit refund request. Please try again.'), backgroundColor: Colors.redAccent),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0C1610) : const Color(0xFFF9F8F5);
+    final cardBg = isDark ? const Color(0xFF14241B) : Colors.white;
+    final borderCol = isDark ? const Color(0xFF223C2D) : const Color(0xFFE5E7EB);
+    final textTitle = isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937);
+    final textSub = isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280);
+
     final activeLoans = _loans.where((l) => !['rejected', 'disbursed'].contains(l['status'])).length;
     final approved = _loans.where((l) => l['status'] == 'approved' || l['status'] == 'disbursed').length;
     final totalRequested = _loans.fold<double>(0, (sum, l) => sum + double.parse(l['amount_requested'].toString()));
 
+    // Get the representative loan for repayment hero card
+    final activeOrDisbursedLoan = _loans.firstWhere(
+      (l) => l['status'] == 'disbursed' || l['status'] == 'approved',
+      orElse: () => _loans.isNotEmpty ? _loans.first : null,
+    );
+
+    double reqAmt = 300000;
+    double pdAmt = 300000;
+    double pct = 1.0;
+    bool isFullyRepaid = true;
+    String statusChipText = 'FULLY REPAID';
+
+    if (activeOrDisbursedLoan != null) {
+      reqAmt = double.tryParse(activeOrDisbursedLoan['amount_requested'].toString()) ?? 0.0;
+      pdAmt = double.tryParse((activeOrDisbursedLoan['amount_paid'] ?? 0).toString()) ?? 0.0;
+      final remAmt = (reqAmt - pdAmt).clamp(0, double.infinity);
+      pct = reqAmt > 0 ? (pdAmt / reqAmt).clamp(0.0, 1.0) : 0.0;
+      isFullyRepaid = remAmt <= 0 && pdAmt > 0;
+      if (isFullyRepaid) {
+        statusChipText = 'FULLY REPAID';
+      } else if (activeOrDisbursedLoan['status'] == 'disbursed') {
+        statusChipText = 'ACTIVE LOAN';
+      } else {
+        statusChipText = statusLabel(activeOrDisbursedLoan['status']).toUpperCase();
+      }
+    }
+
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('VunaFlow'),
+        backgroundColor: bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: const VunaFlowLogo(size: 30, showWordmark: true),
         actions: [
-          IconButton(
-            icon: Badge(
-              label: Text('$_unreadNotifications'),
-              isLabelVisible: _unreadNotifications > 0,
-              child: const Icon(Icons.notifications_outlined),
+          const ThemeToggleButton(),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF162A1F) : Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: borderCol),
             ),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())).then((_) => _loadData()),
+            child: IconButton(
+              icon: Badge(
+                label: Text('$_unreadNotifications', style: const TextStyle(fontSize: 10)),
+                isLabelVisible: _unreadNotifications > 0,
+                backgroundColor: const Color(0xFFB03F2E),
+                child: Icon(Icons.notifications_none_outlined, color: isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937), size: 18),
+              ),
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              ).then((_) => _loadData()),
+            ),
           ),
           const LogoutButton(),
         ],
@@ -161,250 +123,254 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 children: [
-                  // Welcome
+                  // Hero Repayment / Status Card
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]),
-                      borderRadius: BorderRadius.circular(18),
+                      color: isDark ? const Color(0xFF10261A) : const Color(0xFF133826),
+                      borderRadius: BorderRadius.circular(16),
+                      border: isDark ? Border.all(color: const Color(0xFF1E4833)) : null,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF133826).withValues(alpha: isDark ? 0.3 : 0.18),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Welcome back,', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14)),
-                        Text(user?.fullName ?? 'Farmer', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF163E27) : const Color(0xFFD4EDDA),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                statusChipText,
+                                style: GoogleFonts.publicSans(
+                                  color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF155724),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${(pct * 100).toInt()}% Completed',
+                              style: GoogleFonts.publicSans(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
                         Text(
-                          'Track your loans, manage your farm profile, and stay updated — all in one place.',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                          'KSh ${reqAmt.toStringAsFixed(0)}',
+                          style: GoogleFonts.publicSans(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isFullyRepaid
+                              ? 'Repaid of KSh ${reqAmt.toStringAsFixed(0)} Total Loan'
+                              : 'KSh ${pdAmt.toStringAsFixed(0)} Paid of KSh ${reqAmt.toStringAsFixed(0)} Total Loan',
+                          style: GoogleFonts.publicSans(
+                            color: const Color(0xFFB5D5C5),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: pct,
+                            minHeight: 6,
+                            backgroundColor: const Color(0xFF1E4833),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2ECC71)),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  if (_overpaymentBalance > 0) ...[
-                    const SizedBox(height: 18),
-                    Builder(builder: (context) {
-                      final hasUnpaidLoan = _loans.any((l) =>
-                        (l['status'] == 'disbursed' || l['status'] == 'approved') &&
-                        (double.tryParse((l['amount_paid'] ?? 0).toString()) ?? 0.0) <
-                            (double.tryParse(l['amount_requested'].toString()) ?? 0.0),
-                      );
+                  const SizedBox(height: 22),
 
-                      return Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F2D1E),
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
-                          border: Border.all(color: const Color(0xFF2ECC71), width: 1.5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF1E422C),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF2ECC71), size: 26),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Overpayment Credit Balance',
-                                        style: GoogleFonts.publicSans(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        'KSh ${_overpaymentBalance.toStringAsFixed(2)}',
-                                        style: GoogleFonts.fraunces(color: const Color(0xFF2ECC71), fontSize: 22, fontWeight: FontWeight.w700),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF1E422C),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFF2ECC71).withValues(alpha: 0.6)),
-                                  ),
-                                  child: Text(
-                                    'Refundable',
-                                    style: GoogleFonts.publicSans(color: const Color(0xFF2ECC71), fontSize: 12, fontWeight: FontWeight.w800),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            const Divider(color: Colors.white12, height: 1),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                if (hasUnpaidLoan)
-                                  ElevatedButton.icon(
-                                    onPressed: _transferOverpaymentToLoan,
-                                    icon: const Icon(Icons.sync_alt, size: 16),
-                                    label: const Text('Transfer to Active Loan'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF2ECC71),
-                                      foregroundColor: const Color(0xFF0F2D1E),
-                                      textStyle: GoogleFonts.publicSans(fontWeight: FontWeight.w800, fontSize: 12),
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                  ),
-                                OutlinedButton.icon(
-                                  onPressed: _requestRefund,
-                                  icon: const Icon(Icons.output, size: 16),
-                                  label: const Text('Request Refund'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.white38),
-                                    textStyle: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 12),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                  // Active Repayment Banner if farmer has an active/disbursed loan
-                  if (_loans.any((l) => l['status'] == 'disbursed' || l['status'] == 'approved')) ...[
-                    const SizedBox(height: 18),
-                    Builder(builder: (context) {
-                      final disbursedLoan = _loans.firstWhere(
-                        (l) => l['status'] == 'disbursed' || l['status'] == 'approved',
-                        orElse: () => _loans.first,
-                      );
-                      final reqAmt = double.tryParse(disbursedLoan['amount_requested'].toString()) ?? 0.0;
-                      final pdAmt = double.tryParse((disbursedLoan['amount_paid'] ?? 0).toString()) ?? 0.0;
-                      final remAmt = (reqAmt - pdAmt).clamp(0, double.infinity);
-                      final pct = reqAmt > 0 ? (pdAmt / reqAmt).clamp(0.0, 1.0) : 0.0;
-
-                      return Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF122318),
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.payments_outlined, color: AppColors.goldPale, size: 20),
-                                    const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Active Loan Repayment', style: GoogleFonts.fraunces(fontSize: 16, color: AppColors.parchment, fontWeight: FontWeight.w700)),
-                                        if (disbursedLoan['account_number'] != null && disbursedLoan['account_number'].toString().isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 2),
-                                            child: Text('Account No: ${disbursedLoan['account_number']}', style: GoogleFonts.publicSans(color: AppColors.goldPale.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w600)),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                remAmt <= 0
-                                    ? Text('Fully Repaid', style: GoogleFonts.publicSans(color: Colors.greenAccent, fontSize: 13, fontWeight: FontWeight.w700))
-                                    : Text('KSh ${remAmt.toStringAsFixed(0)} Due', style: GoogleFonts.publicSans(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: LinearProgressIndicator(
-                                value: pct,
-                                minHeight: 10,
-                                backgroundColor: const Color(0xFF1E3B29),
-                                color: AppColors.gold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('KSh ${pdAmt.toStringAsFixed(0)} Paid of KSh ${reqAmt.toStringAsFixed(0)}', style: GoogleFonts.publicSans(color: AppColors.goldPale, fontSize: 12)),
-                                if (remAmt <= 0)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
-                                    child: Text('Fully Repaid', style: GoogleFonts.publicSans(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.w700)),
-                                  )
-                                else
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: disbursedLoan['id'])),
-                                      ).then((_) => _loadData());
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.gold,
-                                      foregroundColor: AppColors.shamba900,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    ),
-                                    child: Text('Pay Loan (M-Pesa)', style: GoogleFonts.publicSans(fontSize: 12, fontWeight: FontWeight.w800)),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Loan summary
-                  Text('Loan Summary', style: Theme.of(context).textTheme.titleLarge),
+                  // Loan Summary Section
+                  Text(
+                    'Loan Summary',
+                    style: GoogleFonts.publicSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: textTitle,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _StatCard(label: 'Active', value: '$activeLoans', color: AppColors.info)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _StatCard(label: 'Approved', value: '$approved', color: AppColors.success)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _StatCard(label: 'Total Requested', value: 'KSh ${totalRequested ~/ 1000}K', color: AppColors.accentDark)),
+                      Expanded(
+                        child: _SummaryStatCard(
+                          cardBg: cardBg,
+                          borderCol: borderCol,
+                          textSub: textSub,
+                          valueWidget: Text(
+                            '$activeLoans',
+                            style: GoogleFonts.publicSans(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: textTitle,
+                            ),
+                          ),
+                          label: 'Active',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryStatCard(
+                          cardBg: cardBg,
+                          borderCol: borderCol,
+                          textSub: textSub,
+                          valueWidget: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFF10B981),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '$approved',
+                                style: GoogleFonts.publicSans(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: textTitle,
+                                ),
+                              ),
+                            ],
+                          ),
+                          label: 'Approved',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryStatCard(
+                          cardBg: cardBg,
+                          borderCol: borderCol,
+                          textSub: textSub,
+                          valueWidget: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFFF59E0B),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${(totalRequested / 1000).toStringAsFixed(0)}K',
+                                style: GoogleFonts.publicSans(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w800,
+                                  color: textTitle,
+                                ),
+                              ),
+                            ],
+                          ),
+                          label: 'Total Req.',
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // Loan status
-                  Text('Recent Applications', style: Theme.of(context).textTheme.titleLarge),
+                  // Recent Applications Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recent Applications',
+                        style: GoogleFonts.publicSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: textTitle,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoanTrackingScreen()),
+                        ).then((_) => _loadData()),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Text(
+                            'View All',
+                            style: GoogleFonts.publicSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF10B981),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   if (_loans.isEmpty)
                     Container(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-                      child: const Center(child: Text('You have no loan applications yet. Tap "New Loan" to get started.')),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: borderCol),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No loan applications yet. Tap "+ New Loan" to apply.',
+                          style: GoogleFonts.publicSans(color: textSub, fontSize: 13.5),
+                        ),
+                      ),
                     )
                   else
-                    ..._loans.take(3).map((loan) => _LoanTile(loan: loan, onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id']))).then((_) => _loadData());
-                        })),
-                  const SizedBox(height: 80),
+                    ..._loans.take(3).map((loan) {
+                      final isCrop = (loan['purpose'] ?? '').toString().toLowerCase().contains('plant') ||
+                          (loan['purpose'] ?? '').toString().toLowerCase().contains('seed') ||
+                          (loan['purpose'] ?? '').toString().toLowerCase().contains('maize');
+
+                      return _RecentLoanCard(
+                        loan: loan,
+                        isCrop: isCrop,
+                        cardBg: cardBg,
+                        borderCol: borderCol,
+                        textTitle: textTitle,
+                        textSub: textSub,
+                        isDark: isDark,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
+                          ).then((_) => _loadData());
+                        },
+                      );
+                    }),
+                  const SizedBox(height: 90),
                 ],
               ),
       ),
@@ -412,61 +378,157 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _SummaryStatCard extends StatelessWidget {
+  final Widget valueWidget;
   final String label;
-  final String value;
-  final Color color;
-  const _StatCard({required this.label, required this.value, required this.color});
+  final Color cardBg;
+  final Color borderCol;
+  final Color textSub;
+
+  const _SummaryStatCard({
+    required this.valueWidget,
+    required this.label,
+    required this.cardBg,
+    required this.borderCol,
+    required this.textSub,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderCol),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(height: 10),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          valueWidget,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.publicSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: textSub,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _LoanTile extends StatelessWidget {
+class _RecentLoanCard extends StatelessWidget {
   final Map<String, dynamic> loan;
+  final bool isCrop;
   final VoidCallback onTap;
-  const _LoanTile({required this.loan, required this.onTap});
+  final Color cardBg;
+  final Color borderCol;
+  final Color textTitle;
+  final Color textSub;
+  final bool isDark;
+
+  const _RecentLoanCard({
+    required this.loan,
+    required this.isCrop,
+    required this.onTap,
+    required this.cardBg,
+    required this.borderCol,
+    required this.textTitle,
+    required this.textSub,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final status = loan['status'] as String;
-    final color = AppColors.statusColors[status] ?? AppColors.textSecondary;
-    return Card(
+    final status = loan['status'] as String? ?? 'submitted';
+    final amount = double.tryParse(loan['amount_requested'].toString()) ?? 0.0;
+    final purpose = loan['purpose'] as String? ?? 'Agricultural Loan';
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        onTap: onTap,
-        title: Text('KSh ${double.parse(loan['amount_requested'].toString()).toStringAsFixed(0)}'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(loan['purpose'] ?? ''),
-            if (loan['account_number'] != null && loan['account_number'].toString().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text('Acc: ${loan['account_number']}', style: GoogleFonts.publicSans(fontSize: 11.5, color: AppColors.shamba700, fontWeight: FontWeight.w700)),
-              ),
-          ],
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
-          child: Text(statusLabel(status), style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderCol),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? (isCrop ? const Color(0xFF163E27) : const Color(0xFF382D16))
+                        : (isCrop ? const Color(0xFFE8F5E9) : const Color(0xFFFEF3C7)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isCrop ? Icons.eco_outlined : Icons.agriculture_outlined,
+                      size: 20,
+                      color: isCrop ? const Color(0xFF10B981) : const Color(0xFFD97706),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'KSh ${amount.toStringAsFixed(0)}',
+                        style: GoogleFonts.publicSans(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: textTitle,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        purpose,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.publicSans(
+                          fontSize: 12.5,
+                          color: textSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusLabel(status),
+                    style: GoogleFonts.publicSans(
+                      color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
+

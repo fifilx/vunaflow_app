@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/landing_screen.dart';
 import 'screens/client/client_dashboard_screen.dart';
@@ -15,13 +16,22 @@ class VunaFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider(),
-      child: MaterialApp(
-        title: 'VunaFlow',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        home: const _RootRouter(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'VunaFlow',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeProvider.themeMode,
+            home: const _RootRouter(),
+          );
+        },
       ),
     );
   }

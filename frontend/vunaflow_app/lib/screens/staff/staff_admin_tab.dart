@@ -120,7 +120,13 @@ class _StaffRolesViewState extends State<_StaffRolesView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(error!, style: const TextStyle(color: Colors.red))),
-                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  TextFormField(
+                    controller: nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    inputFormatters: const [CapitalizeWordsInputFormatter()],
+                    decoration: const InputDecoration(labelText: 'Full Name'),
+                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                  ),
                   const SizedBox(height: 10),
                   TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => v!.contains('@') ? null : 'Invalid email'),
                   const SizedBox(height: 10),
@@ -297,7 +303,13 @@ class _ManageBranchesViewState extends State<_ManageBranchesView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (error != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(error!, style: const TextStyle(color: Colors.red))),
-                  TextFormField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Branch Name'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  TextFormField(
+                    controller: nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    inputFormatters: const [CapitalizeWordsInputFormatter()],
+                    decoration: const InputDecoration(labelText: 'Branch Name'),
+                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                  ),
                   const SizedBox(height: 10),
                   TextFormField(controller: codeCtrl, decoration: const InputDecoration(labelText: 'Branch Code', hintText: 'e.g. KTU-01'), validator: (v) => v!.isEmpty ? 'Required' : null),
                   const SizedBox(height: 10),

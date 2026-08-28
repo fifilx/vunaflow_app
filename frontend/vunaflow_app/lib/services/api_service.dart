@@ -9,10 +9,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - iOS simulator / web / desktop: use http://localhost:4000
 /// - Physical device: use your machine's LAN IP, e.g. http://192.168.1.10:4000
 class ApiConfig {
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: kIsWeb ? 'http://localhost:4001' : 'http://localhost:4000',
-  );
+  static const String _envUrl = String.fromEnvironment('API_BASE_URL');
+  static String? _customUrl;
+
+  static String get baseUrl {
+    if (_customUrl != null && _customUrl!.isNotEmpty) return _customUrl!;
+    if (_envUrl.isNotEmpty) return _envUrl;
+    if (kIsWeb) return 'http://localhost:4001';
+    // For native Android (physical device & emulator on LAN):
+    return 'http://192.168.100.68:4001';
+  }
+
+  static void setCustomUrl(String url) {
+    _customUrl = url;
+  }
 
   /// Builds the full URL to an uploaded document, given the file_path
   /// returned by the API (e.g. "uploads/16123-abc.pdf").

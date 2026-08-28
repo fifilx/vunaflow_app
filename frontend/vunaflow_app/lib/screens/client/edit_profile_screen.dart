@@ -16,6 +16,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _saving = false;
   String? _error;
 
+  final _fullNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _nationalIdCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -42,6 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final res = await ApiService.get('/api/profile');
       final account = res['account'];
       final farm = res['farmer_profile'] ?? {};
+      _fullNameCtrl.text = account['full_name'] ?? '';
       _phoneCtrl.text = account['phone'] ?? '';
       _nationalIdCtrl.text = farm['national_id'] ?? '';
       _addressCtrl.text = farm['address'] ?? '';
@@ -84,6 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
     try {
       await ApiService.put('/api/profile', body: {
+        'full_name': _fullNameCtrl.text.trim().isNotEmpty ? _fullNameCtrl.text.trim() : null,
         'phone': normalizeKenyanPhone(_phoneCtrl.text.trim()),
         'national_id': _nationalIdCtrl.text.trim().isEmpty ? null : _nationalIdCtrl.text.trim(),
         'date_of_birth': _dateOfBirth != null ? DateFormat('yyyy-MM-dd').format(_dateOfBirth!) : null,
@@ -124,6 +127,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Text('Personal Details', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               TextFormField(
+                controller: _fullNameCtrl,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: const [CapitalizeWordsInputFormatter()],
+                decoration: const InputDecoration(labelText: 'Full Name', hintText: 'e.g. John Kamau'),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your full name' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(labelText: 'Phone Number', hintText: 'e.g. 0712345678'),
@@ -159,9 +170,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onChanged: (v) => setState(() => _gender = v ?? 'Male'),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _addressCtrl, decoration: const InputDecoration(labelText: 'Address')),
+              TextFormField(
+                controller: _addressCtrl,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: const [CapitalizeWordsInputFormatter()],
+                decoration: const InputDecoration(labelText: 'Address'),
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: _countyCtrl, decoration: const InputDecoration(labelText: 'County')),
+              TextFormField(
+                controller: _countyCtrl,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: const [CapitalizeWordsInputFormatter()],
+                decoration: const InputDecoration(labelText: 'County'),
+              ),
               const SizedBox(height: 28),
               Text('Farming & Livestock Information', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -170,13 +191,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 decoration: const InputDecoration(labelText: 'Farming Focus'),
                 items: const [
                   DropdownMenuItem(value: 'Crops', child: Text('Crops Only (Maize, Coffee, Tea, etc.)')),
-                  DropdownMenuItem(value: 'Livestock', child: Text('Livestock Only (Dairy, Cattle, Poultry, etc.)')),
+                  DropdownMenuItem(value: 'Livestock', child: Text('Livestock Only (Dairy, Cattle, Poultry, practical)')),
                   DropdownMenuItem(value: 'Mixed Farming', child: Text('Mixed Farming (Crops & Livestock)')),
                 ],
                 onChanged: (v) => setState(() => _farmingType = v ?? 'Mixed Farming'),
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _farmLocationCtrl, decoration: const InputDecoration(labelText: 'Farm Location')),
+              TextFormField(
+                controller: _farmLocationCtrl,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: const [CapitalizeWordsInputFormatter()],
+                decoration: const InputDecoration(labelText: 'Farm Location'),
+              ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _farmSizeCtrl,
@@ -186,6 +212,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _primaryCropCtrl,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: const [CapitalizeWordsInputFormatter()],
                 decoration: InputDecoration(
                   labelText: _farmingType == 'Livestock'
                       ? 'Primary Crop / Farm Product (Optional for Livestock)'
@@ -195,6 +223,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _livestockTypeCtrl,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: const [CapitalizeWordsInputFormatter()],
                 decoration: const InputDecoration(labelText: 'Livestock Kept (e.g. Dairy Cattle, Poultry, Goats)'),
               ),
               const SizedBox(height: 12),

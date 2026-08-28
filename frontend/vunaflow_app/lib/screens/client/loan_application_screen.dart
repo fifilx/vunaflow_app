@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
 import 'document_upload_screen.dart';
 import 'edit_profile_screen.dart';
@@ -288,6 +289,8 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
               TextFormField(
                 controller: _purposeCtrl,
                 maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                inputFormatters: const [CapitalizeFirstLetterFormatter()],
                 decoration: const InputDecoration(
                     hintText:
                         'e.g. Purchase of certified maize seed and fertilizer for 5 acres'),
@@ -301,6 +304,8 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _collateralCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                inputFormatters: const [CapitalizeFirstLetterFormatter()],
                 decoration: const InputDecoration(
                     hintText:
                         'e.g. Land Title Deed No. 12345 or Toyota Logbook'),

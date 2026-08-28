@@ -80,6 +80,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  String _capitalizeWords(String input) {
+    if (input.trim().isEmpty) return input.trim();
+    return input.trim().split(RegExp(r'\s+')).map((w) {
+      if (w.isEmpty) return '';
+      return w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '');
+    }).join(' ');
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_question1 == null || _question2 == null) {
@@ -96,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
     try {
       await context.read<AuthProvider>().register(
-            fullName: _nameCtrl.text.trim(),
+            fullName: _capitalizeWords(_nameCtrl.text),
             email: _emailCtrl.text.trim(),
             phone: normalizeKenyanPhone(_phoneCtrl.text.trim()),
             password: _passwordCtrl.text,
@@ -540,6 +548,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return [
       TextFormField(
         controller: _nameCtrl,
+        textCapitalization: TextCapitalization.words,
+        inputFormatters: const [CapitalizeWordsInputFormatter()],
         decoration: const InputDecoration(
           labelText: 'Full Name',
           prefixIcon: Icon(Icons.person_outline, color: AppColors.shamba700),
@@ -649,9 +659,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Icon(Icons.shield_outlined, color: AppColors.shamba700, size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  'Security Verification Questions',
-                  style: GoogleFonts.fraunces(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+                Expanded(
+                  child: Text(
+                    'Security Verification Questions',
+                    style: GoogleFonts.fraunces(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink),
+                  ),
                 ),
               ],
             ),

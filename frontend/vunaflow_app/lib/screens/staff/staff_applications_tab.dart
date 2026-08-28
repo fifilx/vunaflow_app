@@ -298,12 +298,15 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                         ),
                                         title: Row(
                                           children: [
-                                            Text(
-                                              clientName,
-                                              style: GoogleFonts.publicSans(
-                                                fontSize: 15.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: AppColors.ink,
+                                            Expanded(
+                                              child: Text(
+                                                clientName,
+                                                style: GoogleFonts.publicSans(
+                                                  fontSize: 15.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.ink,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                             if (isOverdue) ...[
