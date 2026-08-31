@@ -106,7 +106,11 @@ class _NavBar extends StatelessWidget {
         children: [
           // Logo — shrink slightly on very small screens
           Flexible(
-            child: VunaFlowLogo(size: isMobile ? 28 : 36, showWordmark: !isMobile || MediaQuery.of(context).size.width > 360),
+            child: VunaFlowLogo(
+              size: isMobile ? 28 : 36,
+              showWordmark: !isMobile || MediaQuery.of(context).size.width > 360,
+              textColor: Colors.white,
+            ),
           ),
           if (!isMobile)
             Row(
@@ -1225,7 +1229,7 @@ class _Footer extends StatelessWidget {
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const VunaFlowLogo(size: 26, showWordmark: true),
+                          const VunaFlowLogo(size: 26, showWordmark: true, textColor: Colors.white),
                           const SizedBox(height: 10),
                           Text(
                             '© 2026 VunaFlow',
@@ -1249,7 +1253,7 @@ class _Footer extends StatelessWidget {
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const VunaFlowLogo(size: 28, showWordmark: true),
+                          const VunaFlowLogo(size: 28, showWordmark: true, textColor: Colors.white),
                           Text(
                             '© 2026 VunaFlow — Digital Agricultural & Livestock Financing Platform',
                             style: GoogleFonts.ibmPlexMono(

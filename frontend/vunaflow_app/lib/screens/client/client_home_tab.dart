@@ -637,39 +637,50 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
     ];
 
     return Row(
-      children: actions.map((act) {
-        return Expanded(
-          child: Container(
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderCol),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
+      children: [
+        for (int i = 0; i < actions.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardBg,
                 borderRadius: BorderRadius.circular(12),
-                onTap: act.onTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(act.icon, size: 18, color: act.color),
-                      const SizedBox(width: 8),
-                      Text(
-                        act.label,
-                        style: GoogleFonts.publicSans(fontSize: 13, fontWeight: FontWeight.w700, color: textTitle),
-                      ),
-                    ],
+                border: Border.all(color: borderCol),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: actions[i].onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(actions[i].icon, size: 16, color: actions[i].color),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            actions[i].label,
+                            style: GoogleFonts.publicSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: textTitle,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        );
-      }).toList(),
+        ],
+      ],
     );
   }
 
@@ -988,12 +999,16 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      mainAmount,
-                      style: GoogleFonts.publicSans(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        mainAmount,
+                        style: GoogleFonts.publicSans(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1245,7 +1260,7 @@ class _SummaryStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(14),
@@ -1253,8 +1268,13 @@ class _SummaryStatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          valueWidget,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: valueWidget,
+          ),
           const SizedBox(height: 4),
           Text(
             label,
@@ -1263,6 +1283,8 @@ class _SummaryStatCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: textSub,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ],
       ),
