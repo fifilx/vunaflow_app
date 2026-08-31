@@ -101,7 +101,9 @@ class _LoanTrackingScreenState extends State<LoanTrackingScreen> {
             ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isDesktop = constraints.maxWidth >= 840;
+          final width = constraints.maxWidth;
+          final isMultiColumn = width >= 640;
+          final crossAxisCount = width >= 1100 ? 3 : (width >= 640 ? 2 : 1);
 
           return RefreshIndicator(
             onRefresh: _load,
@@ -109,7 +111,7 @@ class _LoanTrackingScreenState extends State<LoanTrackingScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : Center(
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : 640),
+                      constraints: const BoxConstraints(maxWidth: 1360),
                       child: _loans.isEmpty
                           ? ListView(
                               padding: const EdgeInsets.all(40),
@@ -126,11 +128,11 @@ class _LoanTrackingScreenState extends State<LoanTrackingScreen> {
                                 ),
                               ],
                             )
-                          : isDesktop
+                          : isMultiColumn
                               ? GridView.builder(
-                                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
+                                  padding: EdgeInsets.fromLTRB(width >= 960 ? 28 : 16, 20, width >= 960 ? 28 : 16, 100),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
                                     mainAxisSpacing: 16,
                                     crossAxisSpacing: 16,
                                     mainAxisExtent: 220,

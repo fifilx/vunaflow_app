@@ -3,6 +3,8 @@ import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/logout_button.dart';
 
+import '../../widgets/theme_toggle_button.dart';
+
 class _ChatMessage {
   final String text;
   final bool isUser;
@@ -85,6 +87,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
       appBar: AppBar(
         title: const Text('VunaFlow Assistant'),
         actions: [
+          const ThemeToggleButton(),
           TextButton.icon(
             onPressed: _toggleLanguage,
             icon: const Icon(Icons.language, size: 18, color: AppColors.textSecondary),

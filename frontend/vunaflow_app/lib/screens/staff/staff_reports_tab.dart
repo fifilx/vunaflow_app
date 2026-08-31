@@ -51,59 +51,123 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1080),
-                  child: ListView(
-                    padding: const EdgeInsets.all(20),
-                children: [
-                  Text('Summary', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 4,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                    children: [
-                      _ReportStat(label: 'Total Loans', value: '${_summary?['total_loans'] ?? 0}', color: AppColors.primary, isDark: isDark),
-                      _ReportStat(label: 'Pending', value: '${_summary?['pending_loans'] ?? 0}', color: AppColors.warning, isDark: isDark),
-                      _ReportStat(label: 'Approved', value: '${_summary?['approved_loans'] ?? 0}', color: AppColors.success, isDark: isDark),
-                      _ReportStat(label: 'Rejected', value: '${_summary?['rejected_loans'] ?? 0}', color: AppColors.danger, isDark: isDark),
-                      _ReportStat(label: 'Disbursed', value: '${_summary?['disbursed_loans'] ?? 0}', color: AppColors.info, isDark: isDark),
-                      _ReportStat(label: 'Total Clients', value: '${_summary?['total_clients'] ?? 0}', color: AppColors.accentDark, isDark: isDark),
-                    ],
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final isDesktop = width >= 860;
+
+                return RefreshIndicator(
+                  onRefresh: _load,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1280),
+                      child: ListView(
+                        padding: EdgeInsets.all(isDesktop ? 24 : 16),
+                        children: [
+                          Text('Summary', style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 12),
+                          GridView.count(
+                            crossAxisCount: width < 600 ? 2 : (width < 960 ? 3 : 6),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 1.5,
+                            children: [
+                              _ReportStat(label: 'Total Loans', value: '${_summary?['total_loans'] ?? 0}', color: AppColors.primary, isDark: isDark),
+                              _ReportStat(label: 'Pending', value: '${_summary?['pending_loans'] ?? 0}', color: AppColors.warning, isDark: isDark),
+                              _ReportStat(label: 'Approved', value: '${_summary?['approved_loans'] ?? 0}', color: AppColors.success, isDark: isDark),
+                              _ReportStat(label: 'Rejected', value: '${_summary?['rejected_loans'] ?? 0}', color: AppColors.danger, isDark: isDark),
+                              _ReportStat(label: 'Disbursed', value: '${_summary?['disbursed_loans'] ?? 0}', color: AppColors.info, isDark: isDark),
+                              _ReportStat(label: 'Total Clients', value: '${_summary?['total_clients'] ?? 0}', color: AppColors.accentDark, isDark: isDark),
+                            ],
+                          ),
+                          const SizedBox(height: 32),
+
+                          if (_analytics != null) ...[
+                            if (isDesktop) ...[
+                              // Desktop 2-column side-by-side charts
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Applications by Month', style: Theme.of(context).textTheme.titleLarge),
+                                        const SizedBox(height: 12),
+                                        SizedBox(height: 240, child: _MonthlyBarChart(data: _analytics!['applications_by_month'] as List<dynamic>, isDark: isDark)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Approved vs Rejected', style: Theme.of(context).textTheme.titleLarge),
+                                        const SizedBox(height: 12),
+                                        SizedBox(height: 240, child: _ApprovedVsRejectedChart(data: _analytics!['approved_vs_rejected'] as List<dynamic>)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Loan Amounts', style: Theme.of(context).textTheme.titleLarge),
+                                        const SizedBox(height: 12),
+                                        _LoanAmountsCard(data: _analytics!['loan_amounts'] as Map<String, dynamic>, isDark: isDark),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Applications by Branch', style: Theme.of(context).textTheme.titleLarge),
+                                        const SizedBox(height: 12),
+                                        ..._buildBranchBars(_analytics!['applications_by_branch'] as List<dynamic>, isDark),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              Text('Applications by Month', style: Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(height: 12),
+                              SizedBox(height: 220, child: _MonthlyBarChart(data: _analytics!['applications_by_month'] as List<dynamic>, isDark: isDark)),
+                              const SizedBox(height: 32),
+
+                              Text('Approved vs Rejected', style: Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(height: 12),
+                              SizedBox(height: 220, child: _ApprovedVsRejectedChart(data: _analytics!['approved_vs_rejected'] as List<dynamic>)),
+                              const SizedBox(height: 32),
+
+                              Text('Loan Amounts', style: Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(height: 12),
+                              _LoanAmountsCard(data: _analytics!['loan_amounts'] as Map<String, dynamic>, isDark: isDark),
+                              const SizedBox(height: 32),
+
+                              Text('Applications by Branch', style: Theme.of(context).textTheme.titleLarge),
+                              const SizedBox(height: 12),
+                              ..._buildBranchBars(_analytics!['applications_by_branch'] as List<dynamic>, isDark),
+                            ],
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 32),
-
-                  if (_analytics != null) ...[
-                    Text('Applications by Month', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    SizedBox(height: 220, child: _MonthlyBarChart(data: _analytics!['applications_by_month'] as List<dynamic>, isDark: isDark)),
-                    const SizedBox(height: 32),
-
-                    Text('Approved vs Rejected', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    SizedBox(height: 220, child: _ApprovedVsRejectedChart(data: _analytics!['approved_vs_rejected'] as List<dynamic>)),
-                    const SizedBox(height: 32),
-
-                    Text('Loan Amounts', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    _LoanAmountsCard(data: _analytics!['loan_amounts'] as Map<String, dynamic>, isDark: isDark),
-                    const SizedBox(height: 32),
-
-                    Text('Applications by Branch', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    ..._buildBranchBars(_analytics!['applications_by_branch'] as List<dynamic>, isDark),
-                  ],
-                ],
-              ),
+                );
+              },
             ),
-          ),
-        ),
     );
   }
 

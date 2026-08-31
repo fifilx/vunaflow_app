@@ -23,11 +23,11 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   int _index = 0;
   bool _sidebarCollapsed = false;
 
-  final _screens = const [
-    ClientHomeTab(),
-    LoanTrackingScreen(embedded: true),
-    AssistantScreen(),
-    ProfileScreen(),
+  List<Widget> get _screens => [
+    ClientHomeTab(onNavigateToTab: (index) => setState(() => _index = index)),
+    const LoanTrackingScreen(embedded: true),
+    const AssistantScreen(),
+    const ProfileScreen(),
   ];
 
   final _navItems = const [
