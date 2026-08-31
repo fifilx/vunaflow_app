@@ -199,54 +199,59 @@ class _StaffRolesViewState extends State<_StaffRolesView> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: _staff.isEmpty
-                  ? ListView(children: const [Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No staff accounts yet.')))])
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                      itemCount: _staff.length,
-                      itemBuilder: (context, i) {
-                        final s = _staff[i];
-                        final isActive = s['is_active'] == true;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1080),
+                  child: _staff.isEmpty
+                      ? ListView(children: const [Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No staff accounts yet.')))])
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                          itemCount: _staff.length,
+                          itemBuilder: (context, i) {
+                            final s = _staff[i];
+                            final isActive = s['is_active'] == true;
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(child: Text(s['full_name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700))),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: (isActive ? AppColors.success : AppColors.danger).withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(isActive ? 'Active' : 'Disabled', style: TextStyle(color: isActive ? AppColors.success : AppColors.danger, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Row(
+                                      children: [
+                                        Expanded(child: Text(s['full_name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700))),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: (isActive ? AppColors.success : AppColors.danger).withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(isActive ? 'Active' : 'Disabled', style: TextStyle(color: isActive ? AppColors.success : AppColors.danger, fontSize: 12, fontWeight: FontWeight.w600)),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(s['email'] ?? '', style: Theme.of(context).textTheme.bodyMedium),
+                                    Text('Role: ${s['role']}${s['department'] != null && s['department'] != '' ? ' · ${s['department']}' : ''}', style: Theme.of(context).textTheme.bodyMedium),
+                                    const SizedBox(height: 10),
+                                    Wrap(
+                                      spacing: 8,
+                                      children: [
+                                        OutlinedButton(onPressed: () => _changeRole(s), child: Text(s['role'] == 'admin' ? 'Make Staff' : 'Make Admin')),
+                                        OutlinedButton(
+                                          onPressed: () => _toggleStatus(s),
+                                          style: OutlinedButton.styleFrom(foregroundColor: isActive ? AppColors.danger : AppColors.success),
+                                          child: Text(isActive ? 'Disable' : 'Enable'),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                Text(s['email'] ?? '', style: Theme.of(context).textTheme.bodyMedium),
-                                Text('Role: ${s['role']}${s['department'] != null && s['department'] != '' ? ' · ${s['department']}' : ''}', style: Theme.of(context).textTheme.bodyMedium),
-                                const SizedBox(height: 10),
-                                Wrap(
-                                  spacing: 8,
-                                  children: [
-                                    OutlinedButton(onPressed: () => _changeRole(s), child: Text(s['role'] == 'admin' ? 'Make Staff' : 'Make Admin')),
-                                    OutlinedButton(
-                                      onPressed: () => _toggleStatus(s),
-                                      style: OutlinedButton.styleFrom(foregroundColor: isActive ? AppColors.danger : AppColors.success),
-                                      child: Text(isActive ? 'Disable' : 'Enable'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ),
             ),
     );
   }
@@ -364,36 +369,41 @@ class _ManageBranchesViewState extends State<_ManageBranchesView> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('${_branches.length} branches on file', style: Theme.of(context).textTheme.bodyMedium),
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1080),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('${_branches.length} branches on file', style: Theme.of(context).textTheme.bodyMedium),
+                        ),
+                      ),
+                      Expanded(
+                        child: _branches.isEmpty
+                            ? ListView(children: const [Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No branches yet.')))])
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                                itemCount: _branches.length,
+                                itemBuilder: (context, i) {
+                                  final b = _branches[i];
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      leading: const Icon(Icons.store_outlined, color: AppColors.primary),
+                                      title: Text(b['name'] ?? ''),
+                                      subtitle: Text('${b['county'] ?? ''} · ${b['address'] ?? ''}'),
+                                      trailing: b['phone'] != null ? Text(b['phone'], style: Theme.of(context).textTheme.bodyMedium) : null,
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: _branches.isEmpty
-                        ? ListView(children: const [Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No branches yet.')))])
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                            itemCount: _branches.length,
-                            itemBuilder: (context, i) {
-                              final b = _branches[i];
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                child: ListTile(
-                                  leading: const Icon(Icons.store_outlined, color: AppColors.primary),
-                                  title: Text(b['name'] ?? ''),
-                                  subtitle: Text('${b['county'] ?? ''} · ${b['address'] ?? ''}'),
-                                  trailing: b['phone'] != null ? Text(b['phone'], style: Theme.of(context).textTheme.bodyMedium) : null,
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
+                ),
               ),
             ),
     );

@@ -53,8 +53,11 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1080),
+                  child: ListView(
+                    padding: const EdgeInsets.all(20),
                 children: [
                   Text('Summary', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 12),
@@ -99,6 +102,8 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
                 ],
               ),
             ),
+          ),
+        ),
     );
   }
 

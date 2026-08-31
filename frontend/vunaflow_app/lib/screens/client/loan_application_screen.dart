@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
+import '../../widgets/theme_toggle_button.dart';
 import 'document_upload_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -202,39 +203,43 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     if (!_profileComplete) {
       return Scaffold(
         appBar: AppBar(
-            title: const Text('Loan Application'),
-            actions: const [LogoutButton()]),
+          title: const Text('Loan Application'),
+          actions: const [ThemeToggleButton(), LogoutButton()],
+        ),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.assignment_late_outlined,
-                    size: 56, color: AppColors.warning),
-                const SizedBox(height: 16),
-                Text('Complete Your Profile First',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                Text(
-                  'Before applying for a loan, please complete the following in your farmer profile:',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ..._missingFields.map((f) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Text('•  $f',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                    )),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _goCompleteProfile,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Complete Profile'),
-                ),
-              ],
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.assignment_late_outlined,
+                      size: 56, color: AppColors.warning),
+                  const SizedBox(height: 16),
+                  Text('Complete Your Profile First',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Before applying for a loan, please complete the following in your farmer profile:',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ..._missingFields.map((f) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Text('•  $f',
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                      )),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _goCompleteProfile,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Complete Profile'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -243,9 +248,13 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Loan Application'),
-          actions: const [LogoutButton()]),
-      body: SingleChildScrollView(
+        title: const Text('Loan Application'),
+        actions: const [ThemeToggleButton(), LogoutButton()],
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 820),
+          child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
@@ -399,7 +408,9 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 

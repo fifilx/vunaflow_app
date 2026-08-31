@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -50,38 +51,47 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
-        actions: [TextButton(onPressed: _markAllRead, child: const Text('Mark all read'))],
+        actions: [
+          const ThemeToggleButton(),
+          TextButton(onPressed: _markAllRead, child: const Text('Mark all read')),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: _notifications.isEmpty
-                  ? ListView(
-                      children: const [
-                        Padding(
-                          padding: EdgeInsets.all(40),
-                          child: Center(child: Text('No notifications yet.')),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: _notifications.isEmpty
+                      ? ListView(
+                          children: const [
+                            Padding(
+                              padding: EdgeInsets.all(40),
+                              child: Center(child: Text('No notifications yet.')),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          itemCount: _notifications.length,
+                          itemBuilder: (context, i) {
+                            final n = _notifications[i];
+                            final unread = n['is_read'] == false;
+                            return ListTile(
+                              onTap: () => _markRead(n['id']),
+                              leading: CircleAvatar(
+                                backgroundColor: unread ? AppColors.primary.withValues(alpha: 0.12) : AppColors.border,
+                                child: Icon(Icons.notifications, color: unread ? AppColors.primary : AppColors.textSecondary, size: 18),
+                              ),
+                              title: Text(n['title'], style: TextStyle(fontWeight: unread ? FontWeight.w700 : FontWeight.w500)),
+                              subtitle: Text(n['message']),
+                              trailing: Text(DateFormat.MMMd().format(DateTime.parse(n['created_at'])), style: Theme.of(context).textTheme.bodyMedium),
+                            );
+                          },
                         ),
-                      ],
-                    )
-                  : ListView.builder(
-                      itemCount: _notifications.length,
-                      itemBuilder: (context, i) {
-                        final n = _notifications[i];
-                        final unread = n['is_read'] == false;
-                        return ListTile(
-                          onTap: () => _markRead(n['id']),
-                          leading: CircleAvatar(
-                            backgroundColor: unread ? AppColors.primary.withValues(alpha: 0.12) : AppColors.border,
-                            child: Icon(Icons.notifications, color: unread ? AppColors.primary : AppColors.textSecondary, size: 18),
-                          ),
-                          title: Text(n['title'], style: TextStyle(fontWeight: unread ? FontWeight.w700 : FontWeight.w500)),
-                          subtitle: Text(n['message']),
-                          trailing: Text(DateFormat.MMMd().format(DateTime.parse(n['created_at'])), style: Theme.of(context).textTheme.bodyMedium),
-                        );
-                      },
-                    ),
+                ),
+              ),
             ),
     );
   }

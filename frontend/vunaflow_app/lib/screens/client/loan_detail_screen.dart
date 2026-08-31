@@ -66,6 +66,269 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     );
   }
 
+  Widget _buildRepaymentTrackerCard({
+    required bool isDark,
+    required double progress,
+    required double paidAmt,
+    required double remainingAmt,
+    required double requestedAmt,
+    required BuildContext context,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF10261A) : const Color(0xFF133826),
+        borderRadius: BorderRadius.circular(16),
+        border: isDark ? Border.all(color: const Color(0xFF1E4833)) : null,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF133826).withValues(alpha: isDark ? 0.3 : 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Repayment Tracker',
+                style: GoogleFonts.publicSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2ECC71).withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${(progress * 100).toStringAsFixed(1)}% Paid',
+                  style: GoogleFonts.publicSans(
+                    color: const Color(0xFF2ECC71),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Amount Paid',
+                    style: GoogleFonts.publicSans(
+                      fontSize: 12,
+                      color: const Color(0xFFB5D5C5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    fmtKsh(paidAmt),
+                    style: GoogleFonts.publicSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Remaining Balance',
+                    style: GoogleFonts.publicSans(
+                      fontSize: 12,
+                      color: const Color(0xFFB5D5C5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    fmtKsh(remainingAmt),
+                    style: GoogleFonts.publicSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (remainingAmt <= 0)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D2519),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2ECC71).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Color(0xFF2ECC71), size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Loan Fully Repaid',
+                    style: GoogleFonts.publicSans(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2ECC71),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: () => _showRepaymentModal(context, requestedAmt, paidAmt),
+              icon: const Icon(Icons.payments_outlined, size: 18),
+              label: Text(
+                'Make Repayment (M-Pesa)',
+                style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.shamba900,
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsInfoCard({
+    required Color cardBg,
+    required Color borderCol,
+    required Color textSub,
+    required Color textTitle,
+    required Color dividerCol,
+    required Map<String, dynamic> loan,
+    required String formattedSubmittedOn,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderCol),
+      ),
+      child: Column(
+        children: [
+          _DetailRow(
+            label: 'Purpose',
+            labelColor: textSub,
+            valueWidget: Text(
+              loan['purpose'] ?? 'General farming',
+              style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600, color: textTitle),
+              textAlign: TextAlign.end,
+            ),
+          ),
+          Divider(color: dividerCol, height: 22, thickness: 1),
+          _DetailRow(
+            label: 'Repayment Period',
+            labelColor: textSub,
+            valueWidget: Text(
+              '${loan['repayment_period_months'] ?? 12} months',
+              style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600, color: textTitle),
+            ),
+          ),
+          Divider(color: dividerCol, height: 22, thickness: 1),
+          _DetailRow(
+            label: 'Branch',
+            labelColor: textSub,
+            valueWidget: Text(
+              loan['branch_name'] ?? 'Head Office',
+              style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600, color: textTitle),
+            ),
+          ),
+          Divider(color: dividerCol, height: 22, thickness: 1),
+          _DetailRow(
+            label: 'Submitted On',
+            labelColor: textSub,
+            valueWidget: Text(
+              formattedSubmittedOn,
+              style: GoogleFonts.publicSans(fontSize: 13.5, fontWeight: FontWeight.w600, color: textTitle),
+            ),
+          ),
+          Divider(color: dividerCol, height: 22, thickness: 1),
+          _DetailRow(
+            label: 'Eligibility Indication',
+            labelColor: textSub,
+            valueWidget: Text(
+              loan['eligibility_result'] ?? 'Likely eligible',
+              style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF10B981)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentReceiptItem(
+    Map<String, dynamic> p,
+    Color cardBg,
+    Color borderCol,
+    Color textTitle,
+    Color textSub,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderCol),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fmtKsh(double.parse(p['amount'].toString())),
+                    style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 14, color: textTitle),
+                  ),
+                  Text(
+                    '${p['payment_method']} • Ref: ${p['transaction_ref']}',
+                    style: GoogleFonts.ibmPlexMono(fontSize: 11, color: textSub),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Text(
+            DateFormat.yMMMd().format(DateTime.parse(p['created_at'])),
+            style: GoogleFonts.publicSans(fontSize: 12, color: textSub),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -149,344 +412,283 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
           SizedBox(width: 8),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          children: [
-            // Header Amount & Status Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: borderCol),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'APPLICATION ID: ${loan['id'].toString().substring(0, loan['id'].toString().length > 10 ? 10 : loan['id'].toString().length)}...',
-                    style: GoogleFonts.ibmPlexMono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF8BA596) : const Color(0xFF9CA3AF),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        fmtKsh(requestedAmt),
-                        style: GoogleFonts.publicSans(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: textTitle,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          statusLabel(status),
-                          style: GoogleFonts.publicSans(
-                            color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 840;
 
-            // Repayment Tracker Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF10261A) : const Color(0xFF133826),
-                borderRadius: BorderRadius.circular(16),
-                border: isDark ? Border.all(color: const Color(0xFF1E4833)) : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF133826).withValues(alpha: isDark ? 0.3 : 0.18),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          return RefreshIndicator(
+            onRefresh: _load,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isDesktop ? 1080 : 640),
+                child: ListView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 28 : 18,
+                    vertical: isDesktop ? 22 : 14,
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Repayment Tracker',
-                        style: GoogleFonts.publicSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2ECC71).withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${(progress * 100).toStringAsFixed(1)}% Paid',
-                          style: GoogleFonts.publicSans(
-                            color: const Color(0xFF2ECC71),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
+                  children: [
+                    if (isDesktop) ...[
+                      // ---------------------------------------------------------
+                      // Desktop 2-Column Responsive Layout
+                      // ---------------------------------------------------------
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Amount Paid',
-                            style: GoogleFonts.publicSans(
-                              fontSize: 12,
-                              color: const Color(0xFFB5D5C5),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            fmtKsh(paidAmt),
-                            style: GoogleFonts.publicSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Remaining Balance',
-                            style: GoogleFonts.publicSans(
-                              fontSize: 12,
-                              color: const Color(0xFFB5D5C5),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            fmtKsh(remainingAmt),
-                            style: GoogleFonts.publicSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (remainingAmt <= 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0D2519),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF2ECC71).withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_outline, color: Color(0xFF2ECC71), size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Loan Fully Repaid',
-                            style: GoogleFonts.publicSans(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2ECC71),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    ElevatedButton.icon(
-                      onPressed: () => _showRepaymentModal(context, requestedAmt, paidAmt),
-                      icon: const Icon(Icons.payments_outlined, size: 18),
-                      label: Text(
-                        'Make Repayment (M-Pesa)',
-                        style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w700),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.gold,
-                        foregroundColor: AppColors.shamba900,
-                        minimumSize: const Size.fromHeight(46),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Details Information List Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: borderCol),
-              ),
-              child: Column(
-                children: [
-                  _DetailRow(
-                    label: 'Purpose',
-                    labelColor: textSub,
-                    valueWidget: Text(
-                      loan['purpose'] ?? 'General farming',
-                      style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600, color: textTitle),
-                      textAlign: TextAlign.end,
-                    ),
-                  ),
-                  Divider(color: dividerCol, height: 22, thickness: 1),
-                  _DetailRow(
-                    label: 'Repayment Period',
-                    labelColor: textSub,
-                    valueWidget: Text(
-                      '${loan['repayment_period_months'] ?? 12} months',
-                      style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600, color: textTitle),
-                    ),
-                  ),
-                  Divider(color: dividerCol, height: 22, thickness: 1),
-                  _DetailRow(
-                    label: 'Branch',
-                    labelColor: textSub,
-                    valueWidget: Text(
-                      loan['branch_name'] ?? 'Head Office',
-                      style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w600, color: textTitle),
-                    ),
-                  ),
-                  Divider(color: dividerCol, height: 22, thickness: 1),
-                  _DetailRow(
-                    label: 'Submitted On',
-                    labelColor: textSub,
-                    valueWidget: Text(
-                      formattedSubmittedOn,
-                      style: GoogleFonts.publicSans(fontSize: 13.5, fontWeight: FontWeight.w600, color: textTitle),
-                    ),
-                  ),
-                  Divider(color: dividerCol, height: 22, thickness: 1),
-                  _DetailRow(
-                    label: 'Eligibility Indication',
-                    labelColor: textSub,
-                    valueWidget: Text(
-                      loan['eligibility_result'] ?? 'Likely eligible',
-                      style: GoogleFonts.publicSans(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF10B981)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Manage Documents Outlined Button
-            OutlinedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => DocumentUploadScreen(loanId: loan['id'])),
-              ),
-              icon: const Icon(Icons.article_outlined, size: 18),
-              label: Text(
-                'Manage Documents',
-                style: GoogleFonts.publicSans(fontSize: 14.5, fontWeight: FontWeight.w700),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryBtnCol,
-                side: BorderSide(color: primaryBtnCol, width: 1.2),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                minimumSize: const Size.fromHeight(48),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Past Payments Receipt Log (if any)
-            if (_payments.isNotEmpty) ...[
-              Text(
-                'Payment Receipts',
-                style: GoogleFonts.publicSans(fontSize: 16, fontWeight: FontWeight.w700, color: textTitle),
-              ),
-              const SizedBox(height: 10),
-              ..._payments.map((p) => Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderCol),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
-                            const SizedBox(width: 10),
-                            Column(
+                          // Left Column: Amount + Repayment Tracker + Actions
+                          Expanded(
+                            flex: 6,
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  fmtKsh(double.parse(p['amount'].toString())),
-                                  style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 14, color: textTitle),
+                                // Header Amount & Status Card
+                                Container(
+                                  padding: const EdgeInsets.all(18),
+                                  decoration: BoxDecoration(
+                                    color: cardBg,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: borderCol),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'APPLICATION ID: ${loan['id'].toString().substring(0, loan['id'].toString().length > 12 ? 12 : loan['id'].toString().length)}...',
+                                        style: GoogleFonts.ibmPlexMono(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFF8BA596) : const Color(0xFF9CA3AF),
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            fmtKsh(requestedAmt),
+                                            style: GoogleFonts.publicSans(
+                                              fontSize: 26,
+                                              fontWeight: FontWeight.w800,
+                                              color: textTitle,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              statusLabel(status),
+                                              style: GoogleFonts.publicSans(
+                                                color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(height: 16),
+
+                                // Repayment Tracker Card
+                                _buildRepaymentTrackerCard(
+                                  isDark: isDark,
+                                  progress: progress,
+                                  paidAmt: paidAmt,
+                                  remainingAmt: remainingAmt,
+                                  requestedAmt: requestedAmt,
+                                  context: context,
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Manage Documents Button
+                                OutlinedButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => DocumentUploadScreen(loanId: loan['id'])),
+                                  ),
+                                  icon: const Icon(Icons.article_outlined, size: 18),
+                                  label: Text(
+                                    'Manage Loan Documents',
+                                    style: GoogleFonts.publicSans(fontSize: 14.5, fontWeight: FontWeight.w700),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: primaryBtnCol,
+                                    side: BorderSide(color: primaryBtnCol, width: 1.2),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    minimumSize: const Size.fromHeight(48),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+
+                          // Right Column: Details Info Card + Payment Receipts
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Details Information List Card
+                                _buildDetailsInfoCard(
+                                  cardBg: cardBg,
+                                  borderCol: borderCol,
+                                  textSub: textSub,
+                                  textTitle: textTitle,
+                                  dividerCol: dividerCol,
+                                  loan: loan,
+                                  formattedSubmittedOn: formattedSubmittedOn,
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Payment Receipts Log
+                                if (_payments.isNotEmpty) ...[
+                                  Text(
+                                    'Payment Receipts',
+                                    style: GoogleFonts.publicSans(fontSize: 15, fontWeight: FontWeight.w700, color: textTitle),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._payments.map((p) => _buildPaymentReceiptItem(p, cardBg, borderCol, textTitle, textSub)),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      // ---------------------------------------------------------
+                      // Mobile Stacked Layout
+                      // ---------------------------------------------------------
+                      // Header Amount & Status Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderCol),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'APPLICATION ID: ${loan['id'].toString().substring(0, loan['id'].toString().length > 10 ? 10 : loan['id'].toString().length)}...',
+                              style: GoogleFonts.ibmPlexMono(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFF8BA596) : const Color(0xFF9CA3AF),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
                                 Text(
-                                  '${p['payment_method']} • Ref: ${p['transaction_ref']}',
-                                  style: GoogleFonts.ibmPlexMono(fontSize: 11, color: textSub),
+                                  fmtKsh(requestedAmt),
+                                  style: GoogleFonts.publicSans(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: textTitle,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    statusLabel(status),
+                                    style: GoogleFonts.publicSans(
+                                      color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        Text(
-                          DateFormat.yMMMd().format(DateTime.parse(p['created_at'])),
-                          style: GoogleFonts.publicSans(fontSize: 12, color: textSub),
-                        ),
-                      ],
-                    ),
-                  )),
-              const SizedBox(height: 18),
-            ],
+                      ),
+                      const SizedBox(height: 14),
 
-            // Status Timeline History
-            Text(
-              'Status History',
-              style: GoogleFonts.publicSans(fontSize: 16, fontWeight: FontWeight.w700, color: textTitle),
+                      // Repayment Tracker Card
+                      _buildRepaymentTrackerCard(
+                        isDark: isDark,
+                        progress: progress,
+                        paidAmt: paidAmt,
+                        remainingAmt: remainingAmt,
+                        requestedAmt: requestedAmt,
+                        context: context,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Details Information List Card
+                      _buildDetailsInfoCard(
+                        cardBg: cardBg,
+                        borderCol: borderCol,
+                        textSub: textSub,
+                        textTitle: textTitle,
+                        dividerCol: dividerCol,
+                        loan: loan,
+                        formattedSubmittedOn: formattedSubmittedOn,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Manage Documents Outlined Button
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => DocumentUploadScreen(loanId: loan['id'])),
+                        ),
+                        icon: const Icon(Icons.article_outlined, size: 18),
+                        label: Text(
+                          'Manage Documents',
+                          style: GoogleFonts.publicSans(fontSize: 14.5, fontWeight: FontWeight.w700),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: primaryBtnCol,
+                          side: BorderSide(color: primaryBtnCol, width: 1.2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Past Payments Receipt Log (if any)
+                      if (_payments.isNotEmpty) ...[
+                        Text(
+                          'Payment Receipts',
+                          style: GoogleFonts.publicSans(fontSize: 16, fontWeight: FontWeight.w700, color: textTitle),
+                        ),
+                        const SizedBox(height: 10),
+                        ..._payments.map((p) => _buildPaymentReceiptItem(p, cardBg, borderCol, textTitle, textSub)),
+                        const SizedBox(height: 18),
+                      ],
+                    ],
+
+                    const SizedBox(height: 28),
+
+                    // Status Timeline History (Full-Width on Both)
+                    Text(
+                      'Status History',
+                      style: GoogleFonts.publicSans(fontSize: 16, fontWeight: FontWeight.w700, color: textTitle),
+                    ),
+                    const SizedBox(height: 12),
+                    ...history.reversed.map((h) => _TimelineEntry(entry: h, textTitle: textTitle, textSub: textSub, borderCol: borderCol)),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            ...history.reversed.map((h) => _TimelineEntry(entry: h, textTitle: textTitle, textSub: textSub, borderCol: borderCol)),
-            const SizedBox(height: 40),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

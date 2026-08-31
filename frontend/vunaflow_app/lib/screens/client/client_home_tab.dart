@@ -84,7 +84,16 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const VunaFlowLogo(size: 30, showWordmark: true),
+        title: MediaQuery.sizeOf(context).width >= 840
+            ? Text(
+                'Dashboard Overview',
+                style: GoogleFonts.fraunces(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: textTitle,
+                ),
+              )
+            : const VunaFlowLogo(size: 30, showWordmark: true),
         actions: [
           const ThemeToggleButton(),
           Container(
@@ -109,7 +118,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
               ).then((_) => _loadData()),
             ),
           ),
-          const LogoutButton(),
+          if (MediaQuery.sizeOf(context).width < 840) const LogoutButton(),
         ],
       ),
       body: LayoutBuilder(
@@ -375,7 +384,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                                 crossAxisCount: 2,
                                 mainAxisSpacing: 12,
                                 crossAxisSpacing: 16,
-                                mainAxisExtent: 78,
+                                mainAxisExtent: 88,
                               ),
                               itemCount: _loans.take(6).length,
                               itemBuilder: (context, i) {
@@ -384,6 +393,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                                 return _RecentLoanCard(
                                   loan: loan,
                                   statusInfo: statusInfo,
+                                  inGrid: true,
                                   cardBg: cardBg,
                                   borderCol: borderCol,
                                   textTitle: textTitle,
@@ -1075,6 +1085,7 @@ class _SummaryStatCard extends StatelessWidget {
 class _RecentLoanCard extends StatelessWidget {
   final Map<String, dynamic> loan;
   final _LoanStatusModel statusInfo;
+  final bool inGrid;
   final VoidCallback onTap;
   final Color cardBg;
   final Color borderCol;
@@ -1085,6 +1096,7 @@ class _RecentLoanCard extends StatelessWidget {
   const _RecentLoanCard({
     required this.loan,
     required this.statusInfo,
+    this.inGrid = false,
     required this.onTap,
     required this.cardBg,
     required this.borderCol,
@@ -1099,7 +1111,7 @@ class _RecentLoanCard extends StatelessWidget {
     final purpose = loan['purpose'] as String? ?? 'Agricultural Loan';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: inGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: statusInfo.isOverdue
             ? (isDark ? const Color(0xFF241212) : const Color(0xFFFFF5F5))
