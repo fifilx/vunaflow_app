@@ -10,13 +10,32 @@ class StaffAdminTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarBg = isDark ? const Color(0xFF0F1B14) : const Color(0xFF133826);
+    final scaffoldBg = isDark ? const Color(0xFF0C1610) : const Color(0xFFF9F8F5);
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: scaffoldBg,
         appBar: AppBar(
-          title: const Text('Admin'),
+          backgroundColor: appBarBg,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          title: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.spa_outlined, color: Color(0xFFD4AF37), size: 22),
+              SizedBox(width: 8),
+              Text('Admin Console', style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
           actions: const [ThemeToggleButton(), LogoutButton()],
           bottom: const TabBar(
+            indicatorColor: Color(0xFFD4AF37),
+            labelColor: Colors.white,
+            unselectedLabelColor: Color(0xA6F5F2E7),
             tabs: [
               Tab(text: 'Staff & Roles'),
               Tab(text: 'Branches'),
@@ -389,13 +408,51 @@ class _ManageBranchesViewState extends State<_ManageBranchesView> {
                                 itemCount: _branches.length,
                                 itemBuilder: (context, i) {
                                   final b = _branches[i];
-                                  return Card(
+                                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                                  return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
-                                    child: ListTile(
-                                      leading: const Icon(Icons.store_outlined, color: AppColors.primary),
-                                      title: Text(b['name'] ?? ''),
-                                      subtitle: Text('${b['county'] ?? ''} · ${b['address'] ?? ''}'),
-                                      trailing: b['phone'] != null ? Text(b['phone'], style: Theme.of(context).textTheme.bodyMedium) : null,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF14241B) : Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: isDark ? const Color(0xFF223C2D) : const Color(0xFFE5E7EB)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.store_outlined, color: Color(0xFF16A34A), size: 22),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                b['name'] ?? '',
+                                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${b['county'] ?? ''} · ${b['address'] ?? ''}',
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  color: isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280),
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (b['phone'] != null && b['phone'].toString().isNotEmpty) ...[
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            b['phone'].toString(),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   );
                                 },
