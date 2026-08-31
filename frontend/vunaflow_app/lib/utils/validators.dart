@@ -20,6 +20,19 @@ String fmtNum(dynamic value) {
   return fmt.format(num);
 }
 
+/// Formats large amounts compactly, e.g. 1200000 -> "1.2M", 450000 -> "450K".
+String fmtCompact(dynamic value) {
+  final num = double.tryParse(value.toString()) ?? 0;
+  if (num >= 1000000) {
+    final m = num / 1000000;
+    return m % 1 == 0 ? '${m.toStringAsFixed(0)}M' : '${m.toStringAsFixed(1)}M';
+  } else if (num >= 1000) {
+    final k = num / 1000;
+    return k % 1 == 0 ? '${k.toStringAsFixed(0)}K' : '${k.toStringAsFixed(1)}K';
+  }
+  return num.toStringAsFixed(0);
+}
+
 
 /// Formatter that automatically capitalizes the first letter of each word
 /// in real time as the user types (works across Web, Desktop, iOS, and Android).

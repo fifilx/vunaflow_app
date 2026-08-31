@@ -9,6 +9,7 @@ import '../../widgets/theme_toggle_button.dart';
 import 'notifications_screen.dart';
 import 'loan_detail_screen.dart';
 import 'loan_tracking_screen.dart';
+import 'loan_application_screen.dart';
 
 class ClientHomeTab extends StatefulWidget {
   const ClientHomeTab({super.key});
@@ -21,11 +22,19 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
   bool _loading = true;
   List<dynamic> _loans = [];
   int _unreadNotifications = 0;
+  final PageController _pageController = PageController();
+  int _currentCardIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -54,36 +63,20 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
     final textTitle = isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937);
     final textSub = isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280);
 
-    final activeLoans = _loans.where((l) => !['rejected', 'disbursed'].contains(l['status'])).length;
-    final approved = _loans.where((l) => l['status'] == 'approved' || l['status'] == 'disbursed').length;
-    final totalRequested = _loans.fold<double>(0, (sum, l) => sum + double.parse(l['amount_requested'].toString()));
+    // Compute metrics
+    final activeLoansCount = _loans.where((l) => !['rejected', 'disbursed'].contains(l['status'])).length;
+    final approvedLoansCount = _loans.where((l) => l['status'] == 'approved' || l['status'] == 'disbursed').length;
+    final totalRequested = _loans.fold<double>(0, (sum, l) => sum + (double.tryParse(l['amount_requested']?.toString() ?? '0') ?? 0.0));
 
-    // Get the representative loan for repayment hero card
-    final activeOrDisbursedLoan = _loans.firstWhere(
-      (l) => l['status'] == 'disbursed' || l['status'] == 'approved',
-      orElse: () => _loans.isNotEmpty ? _loans.first : null,
-    );
+    final totalDisbursed = _loans
+        .where((l) => l['status'] == 'disbursed')
+        .fold<double>(0, (sum, l) => sum + (double.tryParse(l['amount_requested']?.toString() ?? '0') ?? 0.0));
 
-    double reqAmt = 300000;
-    double pdAmt = 300000;
-    double pct = 1.0;
-    bool isFullyRepaid = true;
-    String statusChipText = 'FULLY REPAID';
+    final totalPaid = _loans.fold<double>(0, (sum, l) => sum + (double.tryParse(l['amount_paid']?.toString() ?? '0') ?? 0.0));
 
-    if (activeOrDisbursedLoan != null) {
-      reqAmt = double.tryParse(activeOrDisbursedLoan['amount_requested'].toString()) ?? 0.0;
-      pdAmt = double.tryParse((activeOrDisbursedLoan['amount_paid'] ?? 0).toString()) ?? 0.0;
-      final remAmt = (reqAmt - pdAmt).clamp(0, double.infinity);
-      pct = reqAmt > 0 ? (pdAmt / reqAmt).clamp(0.0, 1.0) : 0.0;
-      isFullyRepaid = remAmt <= 0 && pdAmt > 0;
-      if (isFullyRepaid) {
-        statusChipText = 'FULLY REPAID';
-      } else if (activeOrDisbursedLoan['status'] == 'disbursed') {
-        statusChipText = 'ACTIVE LOAN';
-      } else {
-        statusChipText = statusLabel(activeOrDisbursedLoan['status']).toUpperCase();
-      }
-    }
+    // Categorize loans
+    final List<Map<String, dynamic>> loanInfos = _loans.map((l) => l as Map<String, dynamic>).toList();
+    final overdueLoans = loanInfos.where((l) => _getLoanStatusInfo(l, isDark).isOverdue).toList();
 
     return Scaffold(
       backgroundColor: bg,
@@ -104,7 +97,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
             child: IconButton(
               icon: Badge(
                 label: Text('$_unreadNotifications', style: const TextStyle(fontSize: 10)),
-                isLabelVisible: _unreadNotifications > 0,
+                isLabelVisible: _unreadNotifications > 0 || overdueLoans.isNotEmpty,
                 backgroundColor: const Color(0xFFB03F2E),
                 child: Icon(Icons.notifications_none_outlined, color: isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937), size: 18),
               ),
@@ -126,86 +119,15 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
             : ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 children: [
-                  // Hero Repayment / Status Card
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF10261A) : const Color(0xFF133826),
-                      borderRadius: BorderRadius.circular(16),
-                      border: isDark ? Border.all(color: const Color(0xFF1E4833)) : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF133826).withValues(alpha: isDark ? 0.3 : 0.18),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF163E27) : const Color(0xFFD4EDDA),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                statusChipText,
-                                style: GoogleFonts.publicSans(
-                                  color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF155724),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${(pct * 100).toInt()}% Completed',
-                              style: GoogleFonts.publicSans(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          fmtKsh(reqAmt),
-                          style: GoogleFonts.publicSans(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isFullyRepaid
-                              ? 'Repaid of ${fmtKsh(reqAmt)} Total Loan'
-                              : '${fmtKsh(pdAmt)} Paid of ${fmtKsh(reqAmt)} Total Loan',
-                          style: GoogleFonts.publicSans(
-                            color: const Color(0xFFB5D5C5),
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: pct,
-                            minHeight: 6,
-                            backgroundColor: const Color(0xFF1E4833),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2ECC71)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Top Multi-Loan Hero Tracker Carousel
+                  _buildHeroSection(loanInfos, totalDisbursed, totalPaid, totalRequested, overdueLoans, isDark),
+
+                  // Dedicated Overdue Alert Notification (if any overdue loans exist)
+                  if (overdueLoans.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    _buildOverdueAlertBanner(overdueLoans, isDark),
+                  ],
+
                   const SizedBox(height: 22),
 
                   // Loan Summary Section
@@ -226,7 +148,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                           borderCol: borderCol,
                           textSub: textSub,
                           valueWidget: Text(
-                            '$activeLoans',
+                            '$activeLoansCount',
                             style: GoogleFonts.publicSans(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -255,7 +177,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                '$approved',
+                                '$approvedLoansCount',
                                 style: GoogleFonts.publicSans(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
@@ -286,7 +208,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${(totalRequested / 1000).toStringAsFixed(0)}K',
+                                fmtCompact(totalRequested),
                                 style: GoogleFonts.publicSans(
                                   fontSize: 19,
                                   fontWeight: FontWeight.w800,
@@ -343,21 +265,44 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                         border: Border.all(color: borderCol),
                       ),
                       child: Center(
-                        child: Text(
-                          'No loan applications yet. Tap "+ New Loan" to apply.',
-                          style: GoogleFonts.publicSans(color: textSub, fontSize: 13.5),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.spa_outlined, size: 36, color: Color(0xFF10B981)),
+                            const SizedBox(height: 10),
+                            Text(
+                              'No loan applications yet.',
+                              style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 15, color: textTitle),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Apply for a quick farming loan to grow your harvest.',
+                              style: GoogleFonts.publicSans(color: textSub, fontSize: 13),
+                            ),
+                            const SizedBox(height: 14),
+                            ElevatedButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LoanApplicationScreen()),
+                              ).then((_) => _loadData()),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Apply For Loan'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF133826),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
                   else
-                    ..._loans.take(3).map((loan) {
-                      final isCrop = (loan['purpose'] ?? '').toString().toLowerCase().contains('plant') ||
-                          (loan['purpose'] ?? '').toString().toLowerCase().contains('seed') ||
-                          (loan['purpose'] ?? '').toString().toLowerCase().contains('maize');
-
+                    ..._loans.take(4).map((loan) {
+                      final statusInfo = _getLoanStatusInfo(loan as Map<String, dynamic>, isDark);
                       return _RecentLoanCard(
                         loan: loan,
-                        isCrop: isCrop,
+                        statusInfo: statusInfo,
                         cardBg: cardBg,
                         borderCol: borderCol,
                         textTitle: textTitle,
@@ -377,6 +322,486 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Top Hero Carousel Section (Portfolio + Individual Loans)
+  // ---------------------------------------------------------------------------
+  Widget _buildHeroSection(
+    List<Map<String, dynamic>> loans,
+    double totalDisbursed,
+    double totalPaid,
+    double totalRequested,
+    List<Map<String, dynamic>> overdueLoans,
+    bool isDark,
+  ) {
+    if (loans.isEmpty) {
+      return _buildSingleHeroCard(
+        title: 'LOAN STATUS',
+        statusChipText: 'READY TO APPLY',
+        statusChipBg: isDark ? const Color(0xFF163E27) : const Color(0xFFD4EDDA),
+        statusChipFg: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF155724),
+        percentText: '0% Active',
+        mainAmount: 'KSh 0',
+        subText: 'Apply today for instant agricultural financing',
+        progress: 0.0,
+        progressColor: const Color(0xFF2ECC71),
+        cardBg: isDark ? const Color(0xFF10261A) : const Color(0xFF133826),
+        borderColor: isDark ? const Color(0xFF1E4833) : null,
+        isDark: isDark,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanApplicationScreen())).then((_) => _loadData()),
+      );
+    }
+
+    // Build the list of cards:
+    // Card 0: Portfolio Overview (if multiple loans)
+    // Card 1..N: Each individual loan
+    final List<Widget> cards = [];
+
+    if (loans.length > 1) {
+      final double overallProgress = totalDisbursed > 0 ? (totalPaid / totalDisbursed).clamp(0.0, 1.0) : (totalRequested > 0 ? (totalPaid / totalRequested).clamp(0.0, 1.0) : 0.0);
+      final bool allFullyRepaid = totalPaid >= totalDisbursed && totalDisbursed > 0;
+      final bool hasOverdue = overdueLoans.isNotEmpty;
+
+      cards.add(
+        _buildSingleHeroCard(
+          title: 'PORTFOLIO OVERVIEW (${loans.length} LOANS)',
+          statusChipText: hasOverdue
+              ? '🚨 ${overdueLoans.length} OVERDUE'
+              : (allFullyRepaid ? '✓ ALL REPAID' : '${(overallProgress * 100).toInt()}% REPAID'),
+          statusChipBg: hasOverdue
+              ? (isDark ? const Color(0xFF3B1616) : const Color(0xFFFEE2E2))
+              : (isDark ? const Color(0xFF163E27) : const Color(0xFFD4EDDA)),
+          statusChipFg: hasOverdue
+              ? (isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626))
+              : (isDark ? const Color(0xFF6EE7B7) : const Color(0xFF155724)),
+          percentText: '${(overallProgress * 100).toInt()}% Total Paid',
+          mainAmount: fmtKsh(totalPaid),
+          subText: 'Repaid of ${fmtKsh(totalDisbursed > 0 ? totalDisbursed : totalRequested)} Total Active Portfolio',
+          progress: overallProgress,
+          progressColor: hasOverdue ? const Color(0xFFEF4444) : const Color(0xFF2ECC71),
+          cardBg: hasOverdue
+              ? (isDark ? const Color(0xFF2A1212) : const Color(0xFF5A1515))
+              : (isDark ? const Color(0xFF10261A) : const Color(0xFF133826)),
+          borderColor: hasOverdue ? const Color(0xFF7F1D1D) : (isDark ? const Color(0xFF1E4833) : null),
+          isDark: isDark,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanTrackingScreen())).then((_) => _loadData()),
+        ),
+      );
+    }
+
+    // Individual loan cards
+    for (int i = 0; i < loans.length; i++) {
+      final loan = loans[i];
+      final statusInfo = _getLoanStatusInfo(loan, isDark);
+      final purpose = loan['purpose'] as String? ?? 'Agricultural Loan';
+
+      Color cardColor;
+      Color? cardBorder;
+      Color barColor;
+
+      if (statusInfo.isOverdue) {
+        cardColor = isDark ? const Color(0xFF2E1212) : const Color(0xFF6B1A1A);
+        cardBorder = const Color(0xFF991B1B);
+        barColor = const Color(0xFFEF4444);
+      } else if (statusInfo.isFullyRepaid) {
+        cardColor = isDark ? const Color(0xFF10261A) : const Color(0xFF133826);
+        cardBorder = isDark ? const Color(0xFF1E4833) : null;
+        barColor = const Color(0xFF2ECC71);
+      } else if (statusInfo.isInProgress) {
+        cardColor = isDark ? const Color(0xFF0F2620) : const Color(0xFF124335);
+        cardBorder = isDark ? const Color(0xFF1E4E40) : null;
+        barColor = const Color(0xFF38BDF8);
+      } else {
+        cardColor = isDark ? const Color(0xFF16232E) : const Color(0xFF1E3A5F);
+        cardBorder = isDark ? const Color(0xFF243B4E) : null;
+        barColor = const Color(0xFFFBBF24);
+      }
+
+      cards.add(
+        _buildSingleHeroCard(
+          title: 'LOAN #${i + 1} · ${purpose.toUpperCase()}',
+          statusChipText: statusInfo.statusChipText,
+          statusChipBg: statusInfo.chipBg,
+          statusChipFg: statusInfo.chipFg,
+          percentText: '${(statusInfo.progress * 100).toInt()}% Completed',
+          mainAmount: fmtKsh(statusInfo.reqAmt),
+          subText: statusInfo.isFullyRepaid
+              ? 'Fully Repaid of ${fmtKsh(statusInfo.reqAmt)} Total Loan'
+              : '${fmtKsh(statusInfo.pdAmt)} Paid of ${fmtKsh(statusInfo.reqAmt)} Total Loan',
+          progress: statusInfo.progress,
+          progressColor: barColor,
+          cardBg: cardColor,
+          borderColor: cardBorder,
+          isDark: isDark,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
+          ).then((_) => _loadData()),
+        ),
+      );
+    }
+
+    if (cards.length == 1) {
+      return cards.first;
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 196,
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: (i) => setState(() => _currentCardIndex = i),
+            children: cards,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(cards.length, (i) {
+            final isSelected = _currentCardIndex == i;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: isSelected ? 20 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: isSelected ? (isDark ? const Color(0xFF34D399) : const Color(0xFF133826)) : (isDark ? const Color(0xFF223C2D) : const Color(0xFFD1D5DB)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSingleHeroCard({
+    required String title,
+    required String statusChipText,
+    required Color statusChipBg,
+    required Color statusChipFg,
+    required String percentText,
+    required String mainAmount,
+    required String subText,
+    required double progress,
+    required Color progressColor,
+    required Color cardBg,
+    required Color? borderColor,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: borderColor != null ? Border.all(color: borderColor, width: 1.5) : null,
+        boxShadow: [
+          BoxShadow(
+            color: cardBg.withValues(alpha: isDark ? 0.3 : 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusChipBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        statusChipText,
+                        style: GoogleFonts.publicSans(
+                          color: statusChipFg,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          percentText,
+                          style: GoogleFonts.publicSans(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right, size: 16, color: Colors.white.withValues(alpha: 0.6)),
+                      ],
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.publicSans(
+                        color: const Color(0xFFB5D5C5).withValues(alpha: 0.8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      mainAmount,
+                      style: GoogleFonts.publicSans(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.publicSans(
+                        color: const Color(0xFFB5D5C5),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: Colors.black.withValues(alpha: 0.25),
+                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Overdue Alert Banner
+  // ---------------------------------------------------------------------------
+  Widget _buildOverdueAlertBanner(List<Map<String, dynamic>> overdueLoans, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF331414) : const Color(0xFFFEE2E2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF7F1D1D) : const Color(0xFFEF4444)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF4A1A1A) : const Color(0xFFFECACA),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Action Required: Payment Overdue',
+                  style: GoogleFonts.publicSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${overdueLoans.length} loan(s) past agreed repayment period. Tap to avoid penalty.',
+                  style: GoogleFonts.publicSans(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFFF87171) : const Color(0xFFB91C1C),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: overdueLoans.first['id'])),
+              ).then((_) => _loadData());
+            },
+            child: Text(
+              'Pay Now',
+              style: GoogleFonts.publicSans(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helper for computing loan repayment & overdue status
+  // ---------------------------------------------------------------------------
+  _LoanStatusModel _getLoanStatusInfo(Map<String, dynamic> loan, bool isDark) {
+    final status = loan['status'] as String? ?? 'submitted';
+    final reqAmt = double.tryParse(loan['amount_requested']?.toString() ?? '0') ?? 0.0;
+    final pdAmt = double.tryParse(loan['amount_paid']?.toString() ?? '0') ?? 0.0;
+    final remAmt = (reqAmt - pdAmt).clamp(0.0, double.infinity);
+    final progress = reqAmt > 0 ? (pdAmt / reqAmt).clamp(0.0, 1.0) : 0.0;
+    final isFullyRepaid = (status == 'disbursed' || status == 'approved') && remAmt <= 0 && pdAmt > 0;
+
+    bool isOverdue = false;
+    int daysOverdue = 0;
+    if (status == 'disbursed' && remAmt > 0) {
+      final createdAt = DateTime.tryParse(loan['created_at'] ?? '');
+      final months = int.tryParse(loan['repayment_period_months']?.toString() ?? '12') ?? 12;
+      if (createdAt != null) {
+        final dueDate = DateTime(createdAt.year, createdAt.month + months, createdAt.day);
+        if (DateTime.now().isAfter(dueDate)) {
+          isOverdue = true;
+          daysOverdue = DateTime.now().difference(dueDate).inDays;
+        }
+      }
+    }
+
+    final isInProgress = status == 'disbursed' && !isFullyRepaid && !isOverdue;
+
+    String statusChipText;
+    Color chipBg;
+    Color chipFg;
+    IconData icon;
+    Color iconBg;
+    Color iconFg;
+
+    if (isOverdue) {
+      statusChipText = daysOverdue > 0 ? 'OVERDUE ($daysOverdue d)' : 'OVERDUE';
+      chipBg = isDark ? const Color(0xFF3B1616) : const Color(0xFFFEE2E2);
+      chipFg = isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626);
+      icon = Icons.warning_amber_rounded;
+      iconBg = isDark ? const Color(0xFF381414) : const Color(0xFFFEE2E2);
+      iconFg = const Color(0xFFEF4444);
+    } else if (isFullyRepaid) {
+      statusChipText = 'FULLY REPAID';
+      chipBg = isDark ? const Color(0xFF163E27) : const Color(0xFFD4EDDA);
+      chipFg = isDark ? const Color(0xFF6EE7B7) : const Color(0xFF155724);
+      icon = Icons.check_circle_outline_rounded;
+      iconBg = isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9);
+      iconFg = const Color(0xFF10B981);
+    } else if (isInProgress) {
+      statusChipText = 'IN PROGRESS';
+      chipBg = isDark ? const Color(0xFF162D3E) : const Color(0xFFE0F2FE);
+      chipFg = isDark ? const Color(0xFF7DD3FC) : const Color(0xFF0369A1);
+      icon = Icons.hourglass_top_rounded;
+      iconBg = isDark ? const Color(0xFF162D3E) : const Color(0xFFE0F2FE);
+      iconFg = const Color(0xFF0284C7);
+    } else if (status == 'approved') {
+      statusChipText = 'APPROVED';
+      chipBg = isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9);
+      chipFg = isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534);
+      icon = Icons.verified_outlined;
+      iconBg = isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9);
+      iconFg = const Color(0xFF10B981);
+    } else if (status == 'rejected') {
+      statusChipText = 'REJECTED';
+      chipBg = isDark ? const Color(0xFF3B1616) : const Color(0xFFFDE8E8);
+      chipFg = isDark ? const Color(0xFFFCA5A5) : const Color(0xFF9B1C1C);
+      icon = Icons.cancel_outlined;
+      iconBg = isDark ? const Color(0xFF3B1616) : const Color(0xFFFDE8E8);
+      iconFg = const Color(0xFFEF4444);
+    } else {
+      statusChipText = statusLabel(status).toUpperCase();
+      chipBg = isDark ? const Color(0xFF382D16) : const Color(0xFFFEF3C7);
+      chipFg = isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309);
+      icon = Icons.pending_actions_rounded;
+      iconBg = isDark ? const Color(0xFF382D16) : const Color(0xFFFEF3C7);
+      iconFg = const Color(0xFFD97706);
+    }
+
+    return _LoanStatusModel(
+      isOverdue: isOverdue,
+      isFullyRepaid: isFullyRepaid,
+      isInProgress: isInProgress,
+      daysOverdue: daysOverdue,
+      reqAmt: reqAmt,
+      pdAmt: pdAmt,
+      remAmt: remAmt,
+      progress: progress,
+      statusChipText: statusChipText,
+      chipBg: chipBg,
+      chipFg: chipFg,
+      icon: icon,
+      iconBg: iconBg,
+      iconFg: iconFg,
+    );
+  }
+}
+
+class _LoanStatusModel {
+  final bool isOverdue;
+  final bool isFullyRepaid;
+  final bool isInProgress;
+  final int daysOverdue;
+  final double reqAmt;
+  final double pdAmt;
+  final double remAmt;
+  final double progress;
+  final String statusChipText;
+  final Color chipBg;
+  final Color chipFg;
+  final IconData icon;
+  final Color iconBg;
+  final Color iconFg;
+
+  _LoanStatusModel({
+    required this.isOverdue,
+    required this.isFullyRepaid,
+    required this.isInProgress,
+    required this.daysOverdue,
+    required this.reqAmt,
+    required this.pdAmt,
+    required this.remAmt,
+    required this.progress,
+    required this.statusChipText,
+    required this.chipBg,
+    required this.chipFg,
+    required this.icon,
+    required this.iconBg,
+    required this.iconFg,
+  });
 }
 
 class _SummaryStatCard extends StatelessWidget {
@@ -424,7 +849,7 @@ class _SummaryStatCard extends StatelessWidget {
 
 class _RecentLoanCard extends StatelessWidget {
   final Map<String, dynamic> loan;
-  final bool isCrop;
+  final _LoanStatusModel statusInfo;
   final VoidCallback onTap;
   final Color cardBg;
   final Color borderCol;
@@ -434,7 +859,7 @@ class _RecentLoanCard extends StatelessWidget {
 
   const _RecentLoanCard({
     required this.loan,
-    required this.isCrop,
+    required this.statusInfo,
     required this.onTap,
     required this.cardBg,
     required this.borderCol,
@@ -445,16 +870,22 @@ class _RecentLoanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = loan['status'] as String? ?? 'submitted';
-    final amount = double.tryParse(loan['amount_requested'].toString()) ?? 0.0;
+    final amount = double.tryParse(loan['amount_requested']?.toString() ?? '0') ?? 0.0;
     final purpose = loan['purpose'] as String? ?? 'Agricultural Loan';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: cardBg,
+        color: statusInfo.isOverdue
+            ? (isDark ? const Color(0xFF241212) : const Color(0xFFFFF5F5))
+            : cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderCol),
+        border: Border.all(
+          color: statusInfo.isOverdue
+              ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFCA5A5))
+              : borderCol,
+          width: statusInfo.isOverdue ? 1.5 : 1.0,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -466,20 +897,19 @@ class _RecentLoanCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
+                // Status-Specific Distinct Icon
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? (isCrop ? const Color(0xFF163E27) : const Color(0xFF382D16))
-                        : (isCrop ? const Color(0xFFE8F5E9) : const Color(0xFFFEF3C7)),
+                    color: statusInfo.iconBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Icon(
-                      isCrop ? Icons.eco_outlined : Icons.agriculture_outlined,
-                      size: 20,
-                      color: isCrop ? const Color(0xFF10B981) : const Color(0xFFD97706),
+                      statusInfo.icon,
+                      size: 22,
+                      color: statusInfo.iconFg,
                     ),
                   ),
                 ),
@@ -488,22 +918,49 @@ class _RecentLoanCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        fmtKsh(amount),
-                        style: GoogleFonts.publicSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: textTitle,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            fmtKsh(amount),
+                            style: GoogleFonts.publicSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: textTitle,
+                            ),
+                          ),
+                          if (statusInfo.isOverdue) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDC2626),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'OVERDUE',
+                                style: GoogleFonts.publicSans(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 1),
                       Text(
-                        purpose,
+                        statusInfo.isFullyRepaid
+                            ? '$purpose · Fully Repaid'
+                            : (statusInfo.isInProgress
+                                ? '$purpose · ${fmtKsh(statusInfo.pdAmt)} Paid'
+                                : purpose),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.publicSans(
                           fontSize: 12.5,
-                          color: textSub,
+                          color: statusInfo.isOverdue ? const Color(0xFFEF4444) : textSub,
+                          fontWeight: statusInfo.isOverdue ? FontWeight.w600 : FontWeight.w400,
                         ),
                       ),
                     ],
@@ -512,14 +969,14 @@ class _RecentLoanCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                    color: statusInfo.chipBg,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    statusLabel(status),
+                    statusInfo.statusChipText,
                     style: GoogleFonts.publicSans(
-                      color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
-                      fontSize: 11.5,
+                      color: statusInfo.chipFg,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -532,4 +989,3 @@ class _RecentLoanCard extends StatelessWidget {
     );
   }
 }
-
