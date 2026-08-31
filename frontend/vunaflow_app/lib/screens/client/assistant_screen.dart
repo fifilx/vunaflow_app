@@ -93,67 +93,80 @@ class _AssistantScreenState extends State<AssistantScreen> {
           const LogoutButton(),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, i) {
-                final m = _messages[i];
-                return Align(
-                  alignment: m.isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    constraints: const BoxConstraints(maxWidth: 300),
-                    decoration: BoxDecoration(
-                      color: m.isUser ? AppColors.primary : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: m.isUser ? null : Border.all(color: AppColors.border),
-                    ),
-                    child: Text(m.text, style: TextStyle(color: m.isUser ? Colors.white : AppColors.textPrimary)),
-                  ),
-                );
-              },
-            ),
-          ),
-          if (_suggestions.isNotEmpty)
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _suggestions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) => ActionChip(
-                  label: Text(_suggestions[i]['question']),
-                  onPressed: () => _send(_suggestions[i]['question']),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, i) {
+                    final m = _messages[i];
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    return Align(
+                      alignment: m.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        decoration: BoxDecoration(
+                          color: m.isUser
+                              ? (isDark ? const Color(0xFF1B4D33) : AppColors.primary)
+                              : (isDark ? const Color(0xFF14241B) : Colors.white),
+                          borderRadius: BorderRadius.circular(16),
+                          border: m.isUser ? null : Border.all(color: isDark ? const Color(0xFF223C2D) : AppColors.border),
+                        ),
+                        child: Text(
+                          m.text,
+                          style: TextStyle(
+                            color: m.isUser ? Colors.white : (isDark ? const Color(0xFFF4F6F0) : AppColors.textPrimary),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-            ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(hintText: _lang == 'en' ? 'Type your question...' : 'Andika swali lako...'),
-                    onSubmitted: _sending ? null : _send,
+              if (_suggestions.isNotEmpty)
+                SizedBox(
+                  height: 44,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _suggestions.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) => ActionChip(
+                      label: Text(_suggestions[i]['question']),
+                      onPressed: () => _send(_suggestions[i]['question']),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: _sending ? null : () => _send(_controller.text),
-                  icon: const Icon(Icons.send),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(hintText: _lang == 'en' ? 'Type your question...' : 'Andika swali lako...'),
+                        onSubmitted: _sending ? null : _send,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: _sending ? null : () => _send(_controller.text),
+                      icon: const Icon(Icons.send),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

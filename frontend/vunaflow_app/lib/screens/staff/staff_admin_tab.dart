@@ -190,6 +190,7 @@ class _StaffRolesViewState extends State<_StaffRolesView> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'admin_add_staff_fab',
         onPressed: _openAddStaffDialog,
         icon: const Icon(Icons.person_add_alt_1),
         label: const Text('Add Staff'),
@@ -354,6 +355,7 @@ class _ManageBranchesViewState extends State<_ManageBranchesView> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'admin_add_branch_fab',
         onPressed: _openAddBranchDialog,
         icon: const Icon(Icons.add_business_outlined),
         label: const Text('Add Branch'),

@@ -82,58 +82,92 @@ class _LoanTrackingScreenState extends State<LoanTrackingScreen> {
           LogoutButton(),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LoanApplicationScreen()),
-        ).then((_) => _load()),
-        icon: const Icon(Icons.add, color: Colors.white, size: 20),
-        label: const Text(
-          'New Loan',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
-        ),
-        backgroundColor: isDark ? const Color(0xFF1A4630) : const Color(0xFF133826),
-        elevation: 4,
-        shape: const StadiumBorder(),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _loans.isEmpty
-                  ? ListView(
-                      padding: const EdgeInsets.all(40),
-                      children: [
-                        Center(
-                          child: Icon(Icons.receipt_long_outlined, size: 56, color: isDark ? const Color(0xFF6B8A77) : const Color(0xFF9CA3AF)),
-                        ),
-                        const SizedBox(height: 12),
-                        Center(
-                          child: Text(
-                            'No loan applications yet.',
-                            style: GoogleFonts.publicSans(color: isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280), fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                      itemCount: _loans.length,
-                      itemBuilder: (context, i) {
-                        final loan = _loans[i];
-                        return _ApplicationCard(
-                          loan: loan,
-                          isDark: isDark,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LoanDetailScreen(loanId: loan['id']),
-                            ),
-                          ).then((_) => _load()),
-                        );
-                      },
-                    ),
+      floatingActionButton: widget.embedded
+          ? null
+          : FloatingActionButton.extended(
+              heroTag: 'loan_tracking_screen_fab',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoanApplicationScreen()),
+              ).then((_) => _load()),
+              icon: const Icon(Icons.add, color: Colors.white, size: 20),
+              label: const Text(
+                'New Loan',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              backgroundColor: isDark ? const Color(0xFF1A4630) : const Color(0xFF133826),
+              elevation: 4,
+              shape: const StadiumBorder(),
             ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 840;
+
+          return RefreshIndicator(
+            onRefresh: _load,
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : 640),
+                      child: _loans.isEmpty
+                          ? ListView(
+                              padding: const EdgeInsets.all(40),
+                              children: [
+                                Center(
+                                  child: Icon(Icons.receipt_long_outlined, size: 56, color: isDark ? const Color(0xFF6B8A77) : const Color(0xFF9CA3AF)),
+                                ),
+                                const SizedBox(height: 12),
+                                Center(
+                                  child: Text(
+                                    'No loan applications yet.',
+                                    style: GoogleFonts.publicSans(color: isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280), fontSize: 14),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : isDesktop
+                              ? GridView.builder(
+                                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 16,
+                                    crossAxisSpacing: 16,
+                                    mainAxisExtent: 220,
+                                  ),
+                                  itemCount: _loans.length,
+                                  itemBuilder: (context, i) {
+                                    final loan = _loans[i];
+                                    return _ApplicationCard(
+                                      loan: loan,
+                                      isDark: isDark,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
+                                      ).then((_) => _load()),
+                                    );
+                                  },
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                                  itemCount: _loans.length,
+                                  itemBuilder: (context, i) {
+                                    final loan = _loans[i];
+                                    return _ApplicationCard(
+                                      loan: loan,
+                                      isDark: isDark,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
+                                      ).then((_) => _load()),
+                                    );
+                                  },
+                                ),
+                    ),
+                  ),
+          );
+        },
+      ),
     );
   }
 }

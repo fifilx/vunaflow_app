@@ -112,213 +112,438 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
           const LogoutButton(),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                children: [
-                  // Top Multi-Loan Hero Tracker Carousel
-                  _buildHeroSection(loanInfos, totalDisbursed, totalPaid, totalRequested, overdueLoans, isDark),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = constraints.maxWidth >= 840;
 
-                  // Dedicated Overdue Alert Notification (if any overdue loans exist)
-                  if (overdueLoans.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    _buildOverdueAlertBanner(overdueLoans, isDark),
-                  ],
-
-                  const SizedBox(height: 22),
-
-                  // Loan Summary Section
-                  Text(
-                    'Loan Summary',
-                    style: GoogleFonts.publicSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: textTitle,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _SummaryStatCard(
-                          cardBg: cardBg,
-                          borderCol: borderCol,
-                          textSub: textSub,
-                          valueWidget: Text(
-                            '$activeLoansCount',
-                            style: GoogleFonts.publicSans(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: textTitle,
-                            ),
-                          ),
-                          label: 'Active',
+          return RefreshIndicator(
+            onRefresh: _loadData,
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isDesktop ? 1200 : 640),
+                      child: ListView(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isDesktop ? 28 : 18,
+                          vertical: isDesktop ? 20 : 12,
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _SummaryStatCard(
-                          cardBg: cardBg,
-                          borderCol: borderCol,
-                          textSub: textSub,
-                          valueWidget: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF10B981),
+                        children: [
+                          if (isDesktop) ...[
+                            // ---------------------------------------------------
+                            // Desktop 2-Column Dashboard Header
+                            // ---------------------------------------------------
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left 60%: Hero Carousel & Overdue Banner & Quick Actions
+                                Expanded(
+                                  flex: 6,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildHeroSection(loanInfos, totalDisbursed, totalPaid, totalRequested, overdueLoans, isDark),
+                                      if (overdueLoans.isNotEmpty) ...[
+                                        const SizedBox(height: 14),
+                                        _buildOverdueAlertBanner(overdueLoans, isDark),
+                                      ],
+                                      const SizedBox(height: 16),
+                                      // Quick Actions Grid for Desktop
+                                      _buildQuickActionsRow(context, isDark, cardBg, borderCol, textTitle, textSub),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                '$approvedLoansCount',
-                                style: GoogleFonts.publicSans(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: textTitle,
+                                const SizedBox(width: 20),
+
+                                // Right 40%: Stats & Advisory Card
+                                Expanded(
+                                  flex: 4,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Loan Portfolio Summary',
+                                        style: GoogleFonts.publicSans(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: textTitle,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _SummaryStatCard(
+                                              cardBg: cardBg,
+                                              borderCol: borderCol,
+                                              textSub: textSub,
+                                              valueWidget: Text(
+                                                '$activeLoansCount',
+                                                style: GoogleFonts.publicSans(fontSize: 22, fontWeight: FontWeight.w800, color: textTitle),
+                                              ),
+                                              label: 'Active',
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: _SummaryStatCard(
+                                              cardBg: cardBg,
+                                              borderCol: borderCol,
+                                              textSub: textSub,
+                                              valueWidget: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF10B981))),
+                                                  const SizedBox(width: 5),
+                                                  Text('$approvedLoansCount', style: GoogleFonts.publicSans(fontSize: 22, fontWeight: FontWeight.w800, color: textTitle)),
+                                                ],
+                                              ),
+                                              label: 'Approved',
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: _SummaryStatCard(
+                                              cardBg: cardBg,
+                                              borderCol: borderCol,
+                                              textSub: textSub,
+                                              valueWidget: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF59E0B))),
+                                                  const SizedBox(width: 4),
+                                                  Text(fmtCompact(totalRequested), style: GoogleFonts.publicSans(fontSize: 19, fontWeight: FontWeight.w800, color: textTitle)),
+                                                ],
+                                              ),
+                                              label: 'Total Req.',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      // Agriculture Advisor Card
+                                      _buildFarmingTipsCard(isDark, cardBg, borderCol, textTitle, textSub),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
+                            ),
+                          ] else ...[
+                            // ---------------------------------------------------
+                            // Mobile Stacked Header
+                            // ---------------------------------------------------
+                            _buildHeroSection(loanInfos, totalDisbursed, totalPaid, totalRequested, overdueLoans, isDark),
+                            if (overdueLoans.isNotEmpty) ...[
+                              const SizedBox(height: 14),
+                              _buildOverdueAlertBanner(overdueLoans, isDark),
                             ],
-                          ),
-                          label: 'Approved',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _SummaryStatCard(
-                          cardBg: cardBg,
-                          borderCol: borderCol,
-                          textSub: textSub,
-                          valueWidget: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFFF59E0B),
+                            const SizedBox(height: 22),
+                            Text('Loan Summary', style: GoogleFonts.publicSans(fontSize: 16, fontWeight: FontWeight.w700, color: textTitle)),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _SummaryStatCard(
+                                    cardBg: cardBg,
+                                    borderCol: borderCol,
+                                    textSub: textSub,
+                                    valueWidget: Text('$activeLoansCount', style: GoogleFonts.publicSans(fontSize: 22, fontWeight: FontWeight.w800, color: textTitle)),
+                                    label: 'Active',
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                fmtCompact(totalRequested),
-                                style: GoogleFonts.publicSans(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w800,
-                                  color: textTitle,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _SummaryStatCard(
+                                    cardBg: cardBg,
+                                    borderCol: borderCol,
+                                    textSub: textSub,
+                                    valueWidget: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF10B981))),
+                                        const SizedBox(width: 5),
+                                        Text('$approvedLoansCount', style: GoogleFonts.publicSans(fontSize: 22, fontWeight: FontWeight.w800, color: textTitle)),
+                                      ],
+                                    ),
+                                    label: 'Approved',
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          label: 'Total Req.',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Recent Applications Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Recent Applications',
-                        style: GoogleFonts.publicSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: textTitle,
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LoanTrackingScreen()),
-                        ).then((_) => _loadData()),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          child: Text(
-                            'View All',
-                            style: GoogleFonts.publicSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF10B981),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (_loans.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: borderCol),
-                      ),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            const Icon(Icons.spa_outlined, size: 36, color: Color(0xFF10B981)),
-                            const SizedBox(height: 10),
-                            Text(
-                              'No loan applications yet.',
-                              style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 15, color: textTitle),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Apply for a quick farming loan to grow your harvest.',
-                              style: GoogleFonts.publicSans(color: textSub, fontSize: 13),
-                            ),
-                            const SizedBox(height: 14),
-                            ElevatedButton.icon(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const LoanApplicationScreen()),
-                              ).then((_) => _loadData()),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Apply For Loan'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF133826),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _SummaryStatCard(
+                                    cardBg: cardBg,
+                                    borderCol: borderCol,
+                                    textSub: textSub,
+                                    valueWidget: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF59E0B))),
+                                        const SizedBox(width: 4),
+                                        Text(fmtCompact(totalRequested), style: GoogleFonts.publicSans(fontSize: 19, fontWeight: FontWeight.w800, color: textTitle)),
+                                      ],
+                                    ),
+                                    label: 'Total Req.',
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
-                        ),
+
+                          const SizedBox(height: 28),
+
+                          // ---------------------------------------------------
+                          // Recent Applications Section
+                          // ---------------------------------------------------
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Recent Applications',
+                                style: GoogleFonts.publicSans(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: textTitle,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LoanTrackingScreen()),
+                                ).then((_) => _loadData()),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  child: Text(
+                                    'View All',
+                                    style: GoogleFonts.publicSans(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (_loans.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: borderCol),
+                              ),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    const Icon(Icons.spa_outlined, size: 36, color: Color(0xFF10B981)),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'No loan applications yet.',
+                                      style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 15, color: textTitle),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Apply for a quick farming loan to grow your harvest.',
+                                      style: GoogleFonts.publicSans(color: textSub, fontSize: 13),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    ElevatedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const LoanApplicationScreen()),
+                                      ).then((_) => _loadData()),
+                                      icon: const Icon(Icons.add, size: 18),
+                                      label: const Text('Apply For Loan'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF133826),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else if (isDesktop)
+                            // 2-Column Grid on Desktop
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 16,
+                                mainAxisExtent: 78,
+                              ),
+                              itemCount: _loans.take(6).length,
+                              itemBuilder: (context, i) {
+                                final loan = _loans[i];
+                                final statusInfo = _getLoanStatusInfo(loan as Map<String, dynamic>, isDark);
+                                return _RecentLoanCard(
+                                  loan: loan,
+                                  statusInfo: statusInfo,
+                                  cardBg: cardBg,
+                                  borderCol: borderCol,
+                                  textTitle: textTitle,
+                                  textSub: textSub,
+                                  isDark: isDark,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
+                                    ).then((_) => _loadData());
+                                  },
+                                );
+                              },
+                            )
+                          else
+                            // Single Column on Mobile
+                            ..._loans.take(4).map((loan) {
+                              final statusInfo = _getLoanStatusInfo(loan as Map<String, dynamic>, isDark);
+                              return _RecentLoanCard(
+                                loan: loan,
+                                statusInfo: statusInfo,
+                                cardBg: cardBg,
+                                borderCol: borderCol,
+                                textTitle: textTitle,
+                                textSub: textSub,
+                                isDark: isDark,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
+                                  ).then((_) => _loadData());
+                                },
+                              );
+                            }),
+                          const SizedBox(height: 90),
+                        ],
                       ),
-                    )
-                  else
-                    ..._loans.take(4).map((loan) {
-                      final statusInfo = _getLoanStatusInfo(loan as Map<String, dynamic>, isDark);
-                      return _RecentLoanCard(
-                        loan: loan,
-                        statusInfo: statusInfo,
-                        cardBg: cardBg,
-                        borderCol: borderCol,
-                        textTitle: textTitle,
-                        textSub: textSub,
-                        isDark: isDark,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => LoanDetailScreen(loanId: loan['id'])),
-                          ).then((_) => _loadData());
-                        },
-                      );
-                    }),
-                  const SizedBox(height: 90),
-                ],
+                    ),
+                  ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desktop Quick Actions Row
+  // ---------------------------------------------------------------------------
+  Widget _buildQuickActionsRow(
+    BuildContext context,
+    bool isDark,
+    Color cardBg,
+    Color borderCol,
+    Color textTitle,
+    Color textSub,
+  ) {
+    final actions = [
+      (
+        icon: Icons.add_circle_outline_rounded,
+        label: 'Apply Loan',
+        color: const Color(0xFF10B981),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanApplicationScreen())).then((_) => _loadData()),
+      ),
+      (
+        icon: Icons.payments_outlined,
+        label: 'Repay Loan',
+        color: const Color(0xFF0284C7),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanTrackingScreen())).then((_) => _loadData()),
+      ),
+      (
+        icon: Icons.chat_bubble_outline_rounded,
+        label: 'AI Assistant',
+        color: const Color(0xFF8B5CF6),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())).then((_) => _loadData()),
+      ),
+    ];
+
+    return Row(
+      children: actions.map((act) {
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderCol),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: act.onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(act.icon, size: 18, color: act.color),
+                      const SizedBox(width: 8),
+                      Text(
+                        act.label,
+                        style: GoogleFonts.publicSans(fontSize: 13, fontWeight: FontWeight.w700, color: textTitle),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desktop Farming Advisory Card
+  // ---------------------------------------------------------------------------
+  Widget _buildFarmingTipsCard(
+    bool isDark,
+    Color cardBg,
+    Color borderCol,
+    Color textTitle,
+    Color textSub,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF14241B) : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? const Color(0xFF223C2D) : const Color(0xFFBBF7D0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1A3826) : const Color(0xFFDCFCE7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.wb_sunny_outlined, color: Color(0xFF16A34A), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Agricultural Advisory',
+                  style: GoogleFonts.publicSans(fontSize: 13.5, fontWeight: FontWeight.w800, color: textTitle),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Timely repayments unlock higher financing tiers for your farm inputs, fertilizers, and seed purchases.',
+                  style: GoogleFonts.publicSans(fontSize: 12, color: textSub, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
