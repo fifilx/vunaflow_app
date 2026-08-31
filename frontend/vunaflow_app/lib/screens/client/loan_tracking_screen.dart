@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 import 'loan_detail_screen.dart';
@@ -216,7 +217,7 @@ class _ApplicationCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'KSh ${reqAmt.toStringAsFixed(0)}',
+                      fmtKsh(reqAmt),
                       style: GoogleFonts.publicSans(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
 import '../../widgets/vunaflow_logo.dart';
 import '../../widgets/theme_toggle_button.dart';
@@ -174,7 +175,7 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          'KSh ${reqAmt.toStringAsFixed(0)}',
+                          fmtKsh(reqAmt),
                           style: GoogleFonts.publicSans(
                             color: Colors.white,
                             fontSize: 22,
@@ -184,8 +185,8 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                         const SizedBox(height: 2),
                         Text(
                           isFullyRepaid
-                              ? 'Repaid of KSh ${reqAmt.toStringAsFixed(0)} Total Loan'
-                              : 'KSh ${pdAmt.toStringAsFixed(0)} Paid of KSh ${reqAmt.toStringAsFixed(0)} Total Loan',
+                              ? 'Repaid of ${fmtKsh(reqAmt)} Total Loan'
+                              : '${fmtKsh(pdAmt)} Paid of ${fmtKsh(reqAmt)} Total Loan',
                           style: GoogleFonts.publicSans(
                             color: const Color(0xFFB5D5C5),
                             fontSize: 12.5,
@@ -488,7 +489,7 @@ class _RecentLoanCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'KSh ${amount.toStringAsFixed(0)}',
+                        fmtKsh(amount),
                         style: GoogleFonts.publicSans(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,

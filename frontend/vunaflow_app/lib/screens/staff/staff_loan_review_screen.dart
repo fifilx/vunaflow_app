@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/theme_toggle_button.dart';
 
 class StaffLoanReviewScreen extends StatefulWidget {
@@ -267,7 +268,7 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'KSh ${amount.toStringAsFixed(0)}',
+                            fmtKsh(amount),
                             style: GoogleFonts.ibmPlexMono(
                               fontSize: 22,
                               color: AppColors.goldPale,
@@ -352,7 +353,7 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
               ),
               const SizedBox(height: 16),
               _buildDetailLine('Repayment period', '${loan['repayment_period_months']} months'),
-              _buildDetailLine('Amount Repaid (Client)', 'KSh ${(double.tryParse((loan['amount_paid'] ?? 0).toString()) ?? 0).toStringAsFixed(0)}'),
+              _buildDetailLine('Amount Repaid (Client)', fmtKsh(double.tryParse((loan['amount_paid'] ?? 0).toString()) ?? 0)),
               _buildAccountNumberRow(loan),
               _buildDetailLine('Branch', loan['branch_name'] as String? ?? 'N/A'),
               _buildDetailLine(
@@ -411,7 +412,7 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
                                 style: GoogleFonts.publicSans(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.red),
                               ),
                               Text(
-                                'This loan has passed the agreed $months-month period by $daysOverdue days. Remaining balance is KSh ${remaining.toStringAsFixed(0)} (${pctRem.toStringAsFixed(1)}% due).',
+                                'This loan has passed the agreed $months-month period by $daysOverdue days. Remaining balance is ${fmtKsh(remaining)} (${pctRem.toStringAsFixed(1)}% due).',
                                 style: GoogleFonts.publicSans(fontSize: 12.5, color: const Color(0xFF78281F)),
                               ),
                             ],
@@ -441,9 +442,9 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _buildDetailLine('Total Loan Amount', 'KSh ${reqAmt.toStringAsFixed(0)}'),
-                _buildDetailLine('Amount Paid by Farmer', 'KSh ${pdAmt.toStringAsFixed(0)}'),
-                _buildDetailLine('Remaining Balance Due', 'KSh ${remaining.toStringAsFixed(0)}'),
+                _buildDetailLine('Total Loan Amount', fmtKsh(reqAmt)),
+                _buildDetailLine('Amount Paid by Farmer', fmtKsh(pdAmt)),
+                _buildDetailLine('Remaining Balance Due', fmtKsh(remaining)),
 
                 if (_payments.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -472,7 +473,7 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'KSh ${double.parse(p['amount'].toString()).toStringAsFixed(0)}',
+                                    fmtKsh(double.parse(p['amount'].toString())),
                                     style: GoogleFonts.publicSans(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 14,
@@ -959,7 +960,7 @@ class _StaffLoanReviewScreenState extends State<StaffLoanReviewScreen> {
           style: GoogleFonts.fraunces(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.brick),
         ),
         content: Text(
-          'Are you sure you want to reverse the repayment of KSh ${double.parse(payment['amount'].toString()).toStringAsFixed(0)} (Ref: ${payment['transaction_ref']})?\n\nThis will send a reversal request to Safaricom Sandbox and deduct the amount from the client\'s paid balance.',
+          'Are you sure you want to reverse the repayment of ${fmtKsh(double.parse(payment['amount'].toString()))} (Ref: ${payment['transaction_ref']})?\n\nThis will send a reversal request to Safaricom Sandbox and deduct the amount from the client\'s paid balance.',
           style: GoogleFonts.publicSans(fontSize: 14, color: AppColors.inkSoft),
         ),
         actions: [

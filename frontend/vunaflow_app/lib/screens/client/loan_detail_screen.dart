@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/theme_toggle_button.dart';
 import 'dart:async';
 import 'repayment_flow_widget.dart';
@@ -178,7 +179,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'KSh ${requestedAmt.toStringAsFixed(0)}',
+                        fmtKsh(requestedAmt),
                         style: GoogleFonts.publicSans(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
@@ -270,7 +271,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'KSh ${paidAmt.toStringAsFixed(0)}',
+                            fmtKsh(paidAmt),
                             style: GoogleFonts.publicSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -292,7 +293,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'KSh ${remainingAmt.toStringAsFixed(0)}',
+                            fmtKsh(remainingAmt),
                             style: GoogleFonts.publicSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -455,7 +456,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'KSh ${double.parse(p['amount'].toString()).toStringAsFixed(0)}',
+                                  fmtKsh(double.parse(p['amount'].toString())),
                                   style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 14, color: textTitle),
                                 ),
                                 Text(

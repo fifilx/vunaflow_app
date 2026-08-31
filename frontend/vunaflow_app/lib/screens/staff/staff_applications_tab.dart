@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 import 'staff_loan_review_screen.dart';
@@ -331,8 +332,8 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
                                         ),
                                         subtitle: Text(
                                           status == 'disbursed'
-                                              ? 'KSh ${amount.toStringAsFixed(0)} · Paid: KSh ${pdAmt.toStringAsFixed(0)} (${pctRem.toStringAsFixed(0)}% Due)'
-                                              : 'KSh ${amount.toStringAsFixed(0)} · ${app['branch_name'] ?? 'No branch'}',
+                                              ? '${fmtKsh(amount)} · Paid: ${fmtKsh(pdAmt)} (${pctRem.toStringAsFixed(0)}% Due)'
+                                              : '${fmtKsh(amount)} · ${app['branch_name'] ?? 'No branch'}',
                                           style: GoogleFonts.ibmPlexMono(
                                             fontSize: 12.5,
                                             fontWeight: status == 'disbursed' ? FontWeight.w600 : FontWeight.w400,

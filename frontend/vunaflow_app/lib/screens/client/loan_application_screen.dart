@@ -539,11 +539,11 @@ class _RepaymentPreview extends StatelessWidget {
             children: [
               Expanded(
                   child: _statTile(context, 'Est. Monthly Payment',
-                      'KSh ${monthlyPayment.toStringAsFixed(0)}')),
+                      fmtKsh(monthlyPayment))),
               const SizedBox(width: 12),
               Expanded(
                   child: _statTile(context, 'Est. Total Interest',
-                      'KSh ${totalInterest.toStringAsFixed(0)}')),
+                      fmtKsh(totalInterest))),
             ],
           ),
           const SizedBox(height: 20),

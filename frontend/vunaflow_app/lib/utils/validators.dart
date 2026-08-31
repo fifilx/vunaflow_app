@@ -3,6 +3,23 @@
 library;
 
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+
+/// Formats a numeric amount as a KSh string with thousands-separator commas.
+/// e.g. 450000 → "KSh 450,000"
+String fmtKsh(dynamic value) {
+  final num = double.tryParse(value.toString()) ?? 0;
+  final fmt = NumberFormat('#,##0', 'en_US');
+  return 'KSh ${fmt.format(num)}';
+}
+
+/// Same as [fmtKsh] but returns just the formatted number without "KSh" prefix.
+String fmtNum(dynamic value) {
+  final num = double.tryParse(value.toString()) ?? 0;
+  final fmt = NumberFormat('#,##0', 'en_US');
+  return fmt.format(num);
+}
+
 
 /// Formatter that automatically capitalizes the first letter of each word
 /// in real time as the user types (works across Web, Desktop, iOS, and Android).

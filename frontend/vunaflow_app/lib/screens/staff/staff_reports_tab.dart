@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 
@@ -265,7 +266,7 @@ class _LoanAmountsCard extends StatelessWidget {
   final bool isDark;
   const _LoanAmountsCard({required this.data, required this.isDark});
 
-  String _fmt(dynamic v) => 'KSh ${double.parse(v.toString()).toStringAsFixed(0)}';
+  String _fmt(dynamic v) => fmtKsh(v);
 
   @override
   Widget build(BuildContext context) {
