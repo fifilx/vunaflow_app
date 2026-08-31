@@ -269,7 +269,7 @@ class AppTheme {
 String statusLabel(String status) {
   switch (status) {
     case 'submitted':
-      return 'Submitted';
+      return 'Pending Approval';
     case 'under_review':
       return 'Under Review';
     case 'documents_verified':
@@ -279,8 +279,159 @@ String statusLabel(String status) {
     case 'rejected':
       return 'Rejected';
     case 'disbursed':
-      return 'Disbursed';
+      return 'Active';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'repaid':
+      return 'Fully Repaid';
     default:
       return status;
   }
 }
+
+class LoanStatusDetails {
+  final String label;
+  final String emoji;
+  final Color badgeBgLight;
+  final Color badgeFgLight;
+  final Color badgeBgDark;
+  final Color badgeFgDark;
+  final IconData icon;
+  final bool isOverdue;
+  final bool isFullyRepaid;
+  final bool isActive;
+  final bool isApproved;
+  final bool isPending;
+  final bool isRejected;
+
+  const LoanStatusDetails({
+    required this.label,
+    required this.emoji,
+    required this.badgeBgLight,
+    required this.badgeFgLight,
+    required this.badgeBgDark,
+    required this.badgeFgDark,
+    required this.icon,
+    this.isOverdue = false,
+    this.isFullyRepaid = false,
+    this.isActive = false,
+    this.isApproved = false,
+    this.isPending = false,
+    this.isRejected = false,
+  });
+
+  String get fullTitle => '$emoji $label';
+  Color badgeBg(bool isDark) => isDark ? badgeBgDark : badgeBgLight;
+  Color badgeFg(bool isDark) => isDark ? badgeFgDark : badgeFgLight;
+}
+
+LoanStatusDetails getDetailedLoanStatus(Map<String, dynamic> loan) {
+  final status = (loan['status'] as String? ?? 'submitted').toLowerCase();
+  final reqAmt = double.tryParse(loan['amount_requested']?.toString() ?? '0') ?? 0.0;
+  final pdAmt = double.tryParse(loan['amount_paid']?.toString() ?? '0') ?? 0.0;
+  final remAmt = (reqAmt - pdAmt).clamp(0.0, double.infinity);
+
+  // Check Overdue
+  if (status == 'disbursed' && remAmt > 0) {
+    final createdAt = DateTime.tryParse(loan['created_at'] ?? '');
+    final months = int.tryParse(loan['repayment_period_months']?.toString() ?? '12') ?? 12;
+    if (createdAt != null) {
+      final dueDate = DateTime(createdAt.year, createdAt.month + months, createdAt.day);
+      if (DateTime.now().isAfter(dueDate)) {
+        return const LoanStatusDetails(
+          label: 'Overdue',
+          emoji: '🔴',
+          badgeBgLight: Color(0xFFFEE2E2),
+          badgeFgLight: Color(0xFFDC2626),
+          badgeBgDark: Color(0xFF3B1616),
+          badgeFgDark: Color(0xFFFCA5A5),
+          icon: Icons.warning_amber_rounded,
+          isOverdue: true,
+          isActive: true,
+        );
+      }
+    }
+  }
+
+  // Check Fully Repaid
+  if ((status == 'disbursed' || status == 'approved' || status == 'repaid') && remAmt <= 0 && pdAmt > 0) {
+    return const LoanStatusDetails(
+      label: 'Fully Repaid',
+      emoji: '✅',
+      badgeBgLight: Color(0xFFD4EDDA),
+      badgeFgLight: Color(0xFF155724),
+      badgeBgDark: Color(0xFF163E27),
+      badgeFgDark: Color(0xFF6EE7B7),
+      icon: Icons.check_circle_outline_rounded,
+      isFullyRepaid: true,
+    );
+  }
+
+  // Check Active Disbursed
+  if (status == 'disbursed') {
+    return const LoanStatusDetails(
+      label: 'Active',
+      emoji: '🟢',
+      badgeBgLight: Color(0xFFE8F5E9),
+      badgeFgLight: Color(0xFF166534),
+      badgeBgDark: Color(0xFF163E27),
+      badgeFgDark: Color(0xFF6EE7B7),
+      icon: Icons.hourglass_top_rounded,
+      isActive: true,
+    );
+  }
+
+  // Check Approved
+  if (status == 'approved') {
+    return const LoanStatusDetails(
+      label: 'Approved',
+      emoji: '🔵',
+      badgeBgLight: Color(0xFFE0F2FE),
+      badgeFgLight: Color(0xFF0369A1),
+      badgeBgDark: Color(0xFF162D3E),
+      badgeFgDark: Color(0xFF7DD3FC),
+      icon: Icons.verified_outlined,
+      isApproved: true,
+    );
+  }
+
+  // Check Rejected
+  if (status == 'rejected') {
+    return const LoanStatusDetails(
+      label: 'Rejected',
+      emoji: '❌',
+      badgeBgLight: Color(0xFFFDE8E8),
+      badgeFgLight: Color(0xFF9B1C1C),
+      badgeBgDark: Color(0xFF3B1616),
+      badgeFgDark: Color(0xFFFCA5A5),
+      icon: Icons.cancel_outlined,
+      isRejected: true,
+    );
+  }
+
+  // Check Cancelled
+  if (status == 'cancelled') {
+    return const LoanStatusDetails(
+      label: 'Cancelled',
+      emoji: '⚪',
+      badgeBgLight: Color(0xFFF3F4F6),
+      badgeFgLight: Color(0xFF4B5563),
+      badgeBgDark: Color(0xFF1F2937),
+      badgeFgDark: Color(0xFF9CA3AF),
+      icon: Icons.block_outlined,
+    );
+  }
+
+  // Default: Pending Approval
+  return const LoanStatusDetails(
+    label: 'Pending Approval',
+    emoji: '🟡',
+    badgeBgLight: Color(0xFFFEF3C7),
+    badgeFgLight: Color(0xFFB45309),
+    badgeBgDark: Color(0xFF382D16),
+    badgeFgDark: Color(0xFFFCD34D),
+    icon: Icons.pending_actions_rounded,
+    isPending: true,
+  );
+}
+

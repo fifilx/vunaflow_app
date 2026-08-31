@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
 import '../../widgets/theme_toggle_button.dart';
+import '../../widgets/repayment_milestone_tracker.dart';
 import 'dart:async';
 import 'repayment_flow_widget.dart';
 import 'document_upload_screen.dart';
@@ -72,6 +73,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     required double paidAmt,
     required double remainingAmt,
     required double requestedAmt,
+    required bool isOverdue,
     required BuildContext context,
   }) {
     return Container(
@@ -170,7 +172,18 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          if (remainingAmt <= 0)
+
+          // 5-Segment Milestone Repayment Tracker with Individual Statuses
+          RepaymentMilestoneTracker(
+            requestedAmount: requestedAmt,
+            paidAmount: paidAmt,
+            isOverdue: isOverdue,
+            isDark: isDark,
+            compact: false,
+          ),
+          const SizedBox(height: 16),
+
+          if (remainingAmt <= 0 && paidAmt > 0)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               width: double.infinity,
@@ -368,7 +381,6 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
 
     final loan = _data!['loan'];
     final history = _data!['history'] as List<dynamic>;
-    final status = loan['status'] as String;
 
     final double requestedAmt = double.tryParse(loan['amount_requested'].toString()) ?? 0.0;
     final double paidAmt = double.tryParse((loan['amount_paid'] ?? 0).toString()) ?? 0.0;
@@ -378,6 +390,8 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     final formattedSubmittedOn = loan['created_at'] != null
         ? DateFormat('MMM d, yyyy h:mm a').format(DateTime.parse(loan['created_at']))
         : 'Aug 7, 2026 9:34 AM';
+
+    final statusInfo = getDetailedLoanStatus(loan);
 
     return Scaffold(
       backgroundColor: bg,
@@ -446,7 +460,12 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                                   decoration: BoxDecoration(
                                     color: cardBg,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: borderCol),
+                                    border: Border.all(
+                                      color: statusInfo.isOverdue
+                                          ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFCA5A5))
+                                          : borderCol,
+                                      width: statusInfo.isOverdue ? 1.5 : 1.0,
+                                    ),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,13 +494,13 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                                              color: statusInfo.badgeBg(isDark),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
-                                              statusLabel(status),
+                                              statusInfo.fullTitle,
                                               style: GoogleFonts.publicSans(
-                                                color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
+                                                color: statusInfo.badgeFg(isDark),
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w700,
                                               ),
@@ -501,6 +520,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                                   paidAmt: paidAmt,
                                   remainingAmt: remainingAmt,
                                   requestedAmt: requestedAmt,
+                                  isOverdue: statusInfo.isOverdue,
                                   context: context,
                                 ),
                                 const SizedBox(height: 16),
@@ -570,7 +590,12 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                         decoration: BoxDecoration(
                           color: cardBg,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: borderCol),
+                          border: Border.all(
+                            color: statusInfo.isOverdue
+                                ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFCA5A5))
+                                : borderCol,
+                            width: statusInfo.isOverdue ? 1.5 : 1.0,
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,13 +624,13 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                                   decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                                    color: statusInfo.badgeBg(isDark),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    statusLabel(status),
+                                    statusInfo.fullTitle,
                                     style: GoogleFonts.publicSans(
-                                      color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
+                                      color: statusInfo.badgeFg(isDark),
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -625,6 +650,7 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
                         paidAmt: paidAmt,
                         remainingAmt: remainingAmt,
                         requestedAmt: requestedAmt,
+                        isOverdue: statusInfo.isOverdue,
                         context: context,
                       ),
                       const SizedBox(height: 14),

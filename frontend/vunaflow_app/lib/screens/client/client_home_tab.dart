@@ -66,8 +66,26 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
     final textSub = isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280);
 
     // Compute metrics
-    final activeLoansList = _loans.where((l) => l['status'] == 'disbursed' || l['status'] == 'approved').toList();
-    final activeLoansCount = _loans.where((l) => !['rejected', 'disbursed'].contains(l['status'])).length;
+    // Active loans = disbursed loans with ongoing repayment balance (or approved)
+    final activeLoansList = _loans.where((l) {
+      final status = l['status'] as String? ?? '';
+      final reqAmt = double.tryParse(l['amount_requested']?.toString() ?? '0') ?? 0.0;
+      final pdAmt = double.tryParse(l['amount_paid']?.toString() ?? '0') ?? 0.0;
+      final remAmt = (reqAmt - pdAmt).clamp(0.0, double.infinity);
+      return (status == 'disbursed' && remAmt > 0) || status == 'approved';
+    }).toList();
+
+    // Active Loans count: includes all loans actively in progress/repayment or submitted
+    final activeLoansCount = _loans.where((l) {
+      final status = l['status'] as String? ?? '';
+      final reqAmt = double.tryParse(l['amount_requested']?.toString() ?? '0') ?? 0.0;
+      final pdAmt = double.tryParse(l['amount_paid']?.toString() ?? '0') ?? 0.0;
+      final remAmt = (reqAmt - pdAmt).clamp(0.0, double.infinity);
+      if (['rejected', 'cancelled'].contains(status)) return false;
+      if (status == 'disbursed' && remAmt <= 0 && pdAmt > 0) return false; // fully repaid
+      return true; // active in lifecycle
+    }).length;
+
     final approvedLoansCount = _loans.where((l) => l['status'] == 'approved' || l['status'] == 'disbursed').length;
     final totalRequested = _loans.fold<double>(0, (sum, l) => sum + (double.tryParse(l['amount_requested']?.toString() ?? '0') ?? 0.0));
 
@@ -108,27 +126,25 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
             ),
             child: IconButton(
               icon: Badge(
-                label: Text('$_unreadNotifications', style: const TextStyle(fontSize: 10)),
+                label: _unreadNotifications > 0 ? Text('$_unreadNotifications', style: const TextStyle(fontSize: 10, color: Colors.white)) : null,
                 isLabelVisible: _unreadNotifications > 0 || overdueLoans.isNotEmpty,
-                backgroundColor: const Color(0xFFB03F2E),
-                child: Icon(Icons.notifications_none_outlined, color: isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937), size: 18),
+                backgroundColor: const Color(0xFFDC2626),
+                child: Icon(Icons.notifications_none_rounded, color: isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937), size: 20),
               ),
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-              ).then((_) => _loadData()),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ).then((_) => _loadData());
+              },
             ),
           ),
-          if (MediaQuery.sizeOf(context).width < 840) const LogoutButton(),
+          const LogoutButton(),
         ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isWideDesktop = width >= 960;
-          final isMediumScreen = width >= 640 && width < 960;
+          final isDesktop = constraints.maxWidth >= 960;
 
           return RefreshIndicator(
             onRefresh: _loadData,
@@ -139,37 +155,48 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                       constraints: const BoxConstraints(maxWidth: 1360),
                       child: ListView(
                         padding: EdgeInsets.symmetric(
-                          horizontal: isWideDesktop ? 28 : (isMediumScreen ? 20 : 16),
-                          vertical: isWideDesktop ? 20 : 12,
+                          horizontal: isDesktop ? 32 : 16,
+                          vertical: isDesktop ? 24 : 14,
                         ),
                         children: [
-                          if (isWideDesktop) ...[
-                            // ---------------------------------------------------
-                            // Wide Desktop: Balanced 2-Column Responsive Layout
-                            // ---------------------------------------------------
+                          if (isDesktop) ...[
+                            // -------------------------------------------------
+                            // Desktop 2-Column Responsive Dashboard Layout
+                            // -------------------------------------------------
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Left Column (flex: 62): Carousel, Overdue Alert, Quick Actions & Recent Apps
+                                // Left Column (62%): Main Portfolio, Alerts & Applications
                                 Expanded(
                                   flex: 62,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildHeroSection(loanInfos, totalDisbursed, totalPaid, totalRequested, overdueLoans, isDark),
+                                      // Overdue Warning Banner
                                       if (overdueLoans.isNotEmpty) ...[
-                                        const SizedBox(height: 14),
                                         _buildOverdueAlertBanner(overdueLoans, isDark),
+                                        const SizedBox(height: 16),
                                       ],
-                                      const SizedBox(height: 16),
-                                      // Quick Actions Grid
+
+                                      // Multi-Loan Carousel & Portfolio Card
+                                      _buildHeroSection(
+                                        loanInfos,
+                                        totalDisbursed,
+                                        totalPaid,
+                                        totalRequested,
+                                        overdueLoans,
+                                        isDark,
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // Quick Actions Bar
                                       _buildQuickActionsRow(context, isDark, cardBg, borderCol, textTitle, textSub),
                                       const SizedBox(height: 24),
 
-                                      // Recent Applications in Left Feed
+                                      // Recent Applications Grid
                                       _buildRecentApplicationsSection(
                                         context: context,
-                                        isDesktop: true,
+                                        isDesktop: isDesktop,
                                         isDark: isDark,
                                         cardBg: cardBg,
                                         borderCol: borderCol,
@@ -181,33 +208,25 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                                 ),
                                 const SizedBox(width: 24),
 
-                                // Right Column (flex: 38): Portfolio Stats, Active Repayments & Agriculture Insights
+                                // Right Column (38%): Summary Metrics, Active Tracker & Advisory
                                 Expanded(
                                   flex: 38,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Portfolio Summary',
-                                        style: GoogleFonts.publicSans(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: textTitle,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
+                                      // Stats Row (Active, Approved, Total Requested)
                                       _buildStatsRow(
                                         activeLoansCount: activeLoansCount,
                                         approvedLoansCount: approvedLoansCount,
                                         totalRequested: totalRequested,
                                         cardBg: cardBg,
                                         borderCol: borderCol,
-                                        textSub: textSub,
                                         textTitle: textTitle,
+                                        textSub: textSub,
                                       ),
-                                      const SizedBox(height: 18),
+                                      const SizedBox(height: 20),
 
-                                      // Active Loan Repayments Tracker Card
+                                      // Active Repayment Progress Card
                                       if (activeLoansList.isNotEmpty) ...[
                                         _buildActiveLoansTrackerCard(
                                           activeLoans: activeLoansList,
@@ -217,55 +236,65 @@ class _ClientHomeTabState extends State<ClientHomeTab> {
                                           textTitle: textTitle,
                                           textSub: textSub,
                                         ),
-                                        const SizedBox(height: 18),
+                                        const SizedBox(height: 20),
                                       ],
 
-                                      // Agricultural Advisory Card with AI Assistant Action
-                                      _buildFarmingTipsCard(isDark, cardBg, borderCol, textTitle, textSub),
+                                      // Agricultural Advisory & Assistant Card
+                                      _buildFarmingTipsCard(
+                                        isDark,
+                                        cardBg,
+                                        borderCol,
+                                        textTitle,
+                                        textSub,
+                                      ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                           ] else ...[
-                            // ---------------------------------------------------
-                            // Tablet & Mobile Stacked Layout
-                            // ---------------------------------------------------
-                            _buildHeroSection(loanInfos, totalDisbursed, totalPaid, totalRequested, overdueLoans, isDark),
+                            // -------------------------------------------------
+                            // Mobile / Compact Layout
+                            // -------------------------------------------------
                             if (overdueLoans.isNotEmpty) ...[
-                              const SizedBox(height: 14),
                               _buildOverdueAlertBanner(overdueLoans, isDark),
+                              const SizedBox(height: 14),
                             ],
+
+                            _buildHeroSection(
+                              loanInfos,
+                              totalDisbursed,
+                              totalPaid,
+                              totalRequested,
+                              overdueLoans,
+                              isDark,
+                            ),
                             const SizedBox(height: 16),
+
                             _buildQuickActionsRow(context, isDark, cardBg, borderCol, textTitle, textSub),
-                            const SizedBox(height: 22),
-                            Text('Portfolio Summary', style: GoogleFonts.publicSans(fontSize: 16, fontWeight: FontWeight.w700, color: textTitle)),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
+
                             _buildStatsRow(
                               activeLoansCount: activeLoansCount,
                               approvedLoansCount: approvedLoansCount,
                               totalRequested: totalRequested,
                               cardBg: cardBg,
                               borderCol: borderCol,
-                              textSub: textSub,
                               textTitle: textTitle,
+                              textSub: textSub,
                             ),
-                            const SizedBox(height: 22),
-                            // Recent Applications
+                            const SizedBox(height: 20),
+
                             _buildRecentApplicationsSection(
                               context: context,
-                              isDesktop: isMediumScreen,
+                              isDesktop: isDesktop,
                               isDark: isDark,
                               cardBg: cardBg,
                               borderCol: borderCol,
                               textTitle: textTitle,
                               textSub: textSub,
                             ),
-                            const SizedBox(height: 20),
-                            // Agricultural Advisory Card
-                            _buildFarmingTipsCard(isDark, cardBg, borderCol, textTitle, textSub),
                           ],
-                          const SizedBox(height: 60),
                         ],
                       ),
                     ),

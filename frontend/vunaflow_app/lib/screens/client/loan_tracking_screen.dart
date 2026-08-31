@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
 import '../../widgets/logout_button.dart';
 import '../../widgets/theme_toggle_button.dart';
+import '../../widgets/repayment_milestone_tracker.dart';
 import 'loan_detail_screen.dart';
 import 'loan_application_screen.dart';
 
@@ -139,7 +140,7 @@ class _LoanTrackingScreenState extends State<LoanTrackingScreen> {
                                   ),
                                   itemCount: _loans.length,
                                   itemBuilder: (context, i) {
-                                    final loan = _loans[i];
+                                    final loan = _loans[i] as Map<String, dynamic>;
                                     return _ApplicationCard(
                                       loan: loan,
                                       isDark: isDark,
@@ -154,7 +155,7 @@ class _LoanTrackingScreenState extends State<LoanTrackingScreen> {
                                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                                   itemCount: _loans.length,
                                   itemBuilder: (context, i) {
-                                    final loan = _loans[i];
+                                    final loan = _loans[i] as Map<String, dynamic>;
                                     return _ApplicationCard(
                                       loan: loan,
                                       isDark: isDark,
@@ -187,49 +188,24 @@ class _ApplicationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = loan['status'] as String? ?? 'submitted';
-    final reqAmt = double.tryParse(loan['amount_requested'].toString()) ?? 0.0;
-    final pdAmt = double.tryParse((loan['amount_paid'] ?? 0).toString()) ?? 0.0;
-    final purpose = loan['purpose'] as String? ?? 'General farming';
+    final statusInfo = getDetailedLoanStatus(loan);
+    final reqAmt = double.tryParse(loan['amount_requested']?.toString() ?? '0') ?? 0.0;
+    final paidAmt = double.tryParse(loan['amount_paid']?.toString() ?? '0') ?? 0.0;
+    final purpose = loan['purpose'] as String? ?? 'General Farming';
 
     final cardBg = isDark ? const Color(0xFF14241B) : Colors.white;
-    final borderCol = isDark ? const Color(0xFF223C2D) : const Color(0xFFE5E7EB);
+    final borderCol = statusInfo.isOverdue
+        ? (isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFCA5A5))
+        : (isDark ? const Color(0xFF223C2D) : const Color(0xFFE5E7EB));
     final textTitle = isDark ? const Color(0xFFF4F6F0) : const Color(0xFF1F2937);
     final textSub = isDark ? const Color(0xFF9EBAA9) : const Color(0xFF6B7280);
-    final filledCol = isDark ? const Color(0xFF34D399) : const Color(0xFF133826);
-    final unfilledCol = isDark ? const Color(0xFF223C2D) : const Color(0xFFE5E7EB);
-
-    final double pct = reqAmt > 0 ? (pdAmt / reqAmt).clamp(0.0, 1.0) : 0.0;
-    final bool isDisbursed = status == 'disbursed';
-    final bool isFullyRepaid = (reqAmt - pdAmt) <= 0 && pdAmt > 0;
-
-    // Segment calculation (5 segments)
-    int filledSegments = 0;
-    if (isFullyRepaid) {
-      filledSegments = 5;
-    } else if (isDisbursed && pdAmt > 0) {
-      filledSegments = (pct * 5).round().clamp(1, 5);
-    } else if (status == 'approved' || status == 'disbursed') {
-      filledSegments = 5;
-    }
-
-    String trackerStatusText = 'Fully Repaid (100%)';
-    if (isFullyRepaid) {
-      trackerStatusText = 'Fully Repaid (100%)';
-    } else if (pdAmt > 0) {
-      trackerStatusText = '${(pct * 100).toInt()}% Paid';
-    } else if (status == 'disbursed') {
-      trackerStatusText = 'Fully Repaid (100%)';
-    } else {
-      trackerStatusText = statusLabel(status);
-    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderCol),
+        border: Border.all(color: borderCol, width: statusInfo.isOverdue ? 1.5 : 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
@@ -248,6 +224,7 @@ class _ApplicationCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -263,13 +240,13 @@ class _ApplicationCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF163E27) : const Color(0xFFE8F5E9),
+                        color: statusInfo.badgeBg(isDark),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        statusLabel(status),
+                        statusInfo.fullTitle,
                         style: GoogleFonts.publicSans(
-                          color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF166534),
+                          color: statusInfo.badgeFg(isDark),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -277,7 +254,7 @@ class _ApplicationCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   purpose,
                   maxLines: 1,
@@ -287,47 +264,15 @@ class _ApplicationCard extends StatelessWidget {
                     color: textSub,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
 
-                // Segmented Repayment Progress Bar (5 rounded pill dashes)
-                Row(
-                  children: List.generate(5, (index) {
-                    final bool isFilled = index < filledSegments;
-                    return Expanded(
-                      child: Container(
-                        height: 5,
-                        margin: EdgeInsets.only(right: index == 4 ? 0 : 6),
-                        decoration: BoxDecoration(
-                          color: isFilled ? filledCol : unfilledCol,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 10),
-
-                // Bottom tracker labels
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Repayment Tracker',
-                      style: GoogleFonts.publicSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: textSub,
-                      ),
-                    ),
-                    Text(
-                      trackerStatusText,
-                      style: GoogleFonts.publicSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: filledCol,
-                      ),
-                    ),
-                  ],
+                // 5-Segment Milestone Repayment Tracker with Individual Statuses
+                RepaymentMilestoneTracker(
+                  requestedAmount: reqAmt,
+                  paidAmount: paidAmt,
+                  isOverdue: statusInfo.isOverdue,
+                  isDark: isDark,
+                  compact: true,
                 ),
               ],
             ),
@@ -337,4 +282,3 @@ class _ApplicationCard extends StatelessWidget {
     );
   }
 }
-
