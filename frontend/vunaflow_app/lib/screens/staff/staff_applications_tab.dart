@@ -10,7 +10,8 @@ import '../../widgets/theme_toggle_button.dart';
 import 'staff_loan_review_screen.dart';
 
 class StaffApplicationsTab extends StatefulWidget {
-  const StaffApplicationsTab({super.key});
+  final VoidCallback? onOpenDrawer;
+  const StaffApplicationsTab({super.key, this.onOpenDrawer});
 
   @override
   State<StaffApplicationsTab> createState() => _StaffApplicationsTabState();
@@ -104,6 +105,13 @@ class _StaffApplicationsTabState extends State<StaffApplicationsTab> {
         foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: !isDesktop
+            ? IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                tooltip: 'Open Side Panel',
+                onPressed: widget.onOpenDrawer ?? () => Scaffold.of(context).openDrawer(),
+              )
+            : null,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

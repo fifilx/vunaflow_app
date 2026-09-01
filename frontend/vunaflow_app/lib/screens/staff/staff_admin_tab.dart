@@ -6,13 +6,15 @@ import '../../widgets/theme_toggle_button.dart';
 import '../../utils/validators.dart';
 
 class StaffAdminTab extends StatelessWidget {
-  const StaffAdminTab({super.key});
+  final VoidCallback? onOpenDrawer;
+  const StaffAdminTab({super.key, this.onOpenDrawer});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final appBarBg = isDark ? const Color(0xFF0F1B14) : const Color(0xFF133826);
     final scaffoldBg = isDark ? const Color(0xFF0C1610) : const Color(0xFFF9F8F5);
+    final isDesktop = MediaQuery.sizeOf(context).width >= 840;
 
     return DefaultTabController(
       length: 2,
@@ -23,6 +25,13 @@ class StaffAdminTab extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
           scrolledUnderElevation: 0,
+          leading: !isDesktop
+              ? IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  tooltip: 'Open Side Panel',
+                  onPressed: onOpenDrawer ?? () => Scaffold.of(context).openDrawer(),
+                )
+              : null,
           title: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [

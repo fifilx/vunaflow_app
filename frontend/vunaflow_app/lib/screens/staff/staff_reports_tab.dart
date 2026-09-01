@@ -7,7 +7,8 @@ import '../../widgets/logout_button.dart';
 import '../../widgets/theme_toggle_button.dart';
 
 class StaffReportsTab extends StatefulWidget {
-  const StaffReportsTab({super.key});
+  final VoidCallback? onOpenDrawer;
+  const StaffReportsTab({super.key, this.onOpenDrawer});
 
   @override
   State<StaffReportsTab> createState() => _StaffReportsTabState();
@@ -47,6 +48,8 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
     final appBarBg = isDark ? const Color(0xFF0F1B14) : const Color(0xFF133826);
     final scaffoldBg = isDark ? const Color(0xFF0C1610) : const Color(0xFFF9F8F5);
 
+    final isDesktop = MediaQuery.sizeOf(context).width >= 840;
+
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
@@ -54,6 +57,13 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
         foregroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: !isDesktop
+            ? IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white),
+                tooltip: 'Open Side Panel',
+                onPressed: widget.onOpenDrawer ?? () => Scaffold.of(context).openDrawer(),
+              )
+            : null,
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [

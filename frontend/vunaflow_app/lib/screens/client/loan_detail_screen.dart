@@ -303,40 +303,43 @@ class _LoanDetailScreenState extends State<LoanDetailScreen> {
     Color textTitle,
     Color textSub,
   ) {
+    final pDate = DateTime.tryParse(p['created_at']?.toString() ?? '');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderCol),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    fmtKsh(double.parse(p['amount'].toString())),
-                    style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 14, color: textTitle),
-                  ),
-                  Text(
-                    '${p['payment_method']} • Ref: ${p['transaction_ref']}',
-                    style: GoogleFonts.ibmPlexMono(fontSize: 11, color: textSub),
-                  ),
-                ],
-              ),
-            ],
+          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fmtKsh(double.tryParse(p['amount']?.toString() ?? '0') ?? 0.0),
+                  style: GoogleFonts.publicSans(fontWeight: FontWeight.w700, fontSize: 14, color: textTitle),
+                ),
+                Text(
+                  '${p['payment_method']} · Ref: ${p['transaction_ref']}',
+                  style: GoogleFonts.ibmPlexMono(fontSize: 11, color: textSub),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-          Text(
-            DateFormat.yMMMd().format(DateTime.parse(p['created_at'])),
-            style: GoogleFonts.publicSans(fontSize: 12, color: textSub),
-          ),
+          if (pDate != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              DateFormat.yMMMd().format(pDate),
+              style: GoogleFonts.publicSans(fontSize: 12, color: textSub),
+            ),
+          ],
         ],
       ),
     );
