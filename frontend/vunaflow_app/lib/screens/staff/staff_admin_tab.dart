@@ -174,7 +174,14 @@ class _StaffRolesViewState extends State<_StaffRolesView> {
                     validator: validatePassword,
                   ),
                   const SizedBox(height: 10),
-                  TextFormField(controller: employeeNoCtrl, decoration: const InputDecoration(labelText: 'Employee No. (optional)')),
+                  TextFormField(
+                    controller: employeeNoCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Staff Account / Employee No. (optional)',
+                      prefixText: 'VUNA-',
+                      hintText: '104',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   TextFormField(controller: departmentCtrl, decoration: const InputDecoration(labelText: 'Department (optional)')),
                   const SizedBox(height: 10),
@@ -197,13 +204,18 @@ class _StaffRolesViewState extends State<_StaffRolesView> {
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
                 try {
+                  final rawEmp = employeeNoCtrl.text.trim();
+                  final formattedEmp = rawEmp.isEmpty
+                      ? ''
+                      : (rawEmp.toUpperCase().startsWith('VUNA-') ? rawEmp.toUpperCase() : 'VUNA-$rawEmp');
+
                   await ApiService.post('/api/admin/staff', body: {
                     'full_name': nameCtrl.text.trim(),
                     'email': emailCtrl.text.trim(),
                     'phone': normalizeKenyanPhone(phoneCtrl.text.trim()),
                     'password': passwordCtrl.text,
                     'role': role,
-                    'employee_no': employeeNoCtrl.text.trim(),
+                    'employee_no': formattedEmp,
                     'department': departmentCtrl.text.trim(),
                   });
                   if (dialogContext.mounted) Navigator.pop(dialogContext);

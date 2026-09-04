@@ -69,9 +69,18 @@ router.post(
       );
       const user = userResult.rows[0];
 
+      let finalEmpNo = (employee_no || '').toString().trim().toUpperCase();
+      if (finalEmpNo) {
+        if (!finalEmpNo.startsWith('VUNA-')) {
+          finalEmpNo = `VUNA-${finalEmpNo}`;
+        }
+      } else {
+        finalEmpNo = `VUNA-${Math.floor(100 + Math.random() * 900)}`;
+      }
+
       await client.query(
         `INSERT INTO staff_profiles (user_id, employee_no, department, status) VALUES ($1,$2,$3,'active')`,
-        [user.id, employee_no || null, department || null]
+        [user.id, finalEmpNo, department || null]
       );
 
       await client.query('COMMIT');

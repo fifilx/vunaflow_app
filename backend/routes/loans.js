@@ -407,14 +407,14 @@ function evaluateEligibility({ farm_size_acres, amount_requested, has_collateral
 
   const checks = {
     farmSizeOk: (farm_size_acres ?? 0) >= 2,
-    amountAboveMin: reqAmount >= 1000,
+    amountAboveMin: reqAmount >= 100000,
     amountBelowMax: reqAmount <= 1000000,
     hasCollateral: !!has_collateral,
     ageOk: age === null ? null : age >= 18,
   };
 
   if (!checks.farmSizeOk) reasons.push('Farm size is below the recommended 2 acres');
-  if (!checks.amountAboveMin) reasons.push('Requested amount is below the minimum loan limit of KSh 1,000');
+  if (!checks.amountAboveMin) reasons.push('Requested amount is below the minimum loan limit of KSh 100,000');
   if (!checks.amountBelowMax) reasons.push('Requested amount exceeds the maximum loan limit of KSh 1,000,000');
   if (!checks.hasCollateral) reasons.push('No collateral or land document on file');
   if (checks.ageOk === false) reasons.push('Applicant is under 18 years old');

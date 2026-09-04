@@ -27,6 +27,17 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   final _periodCtrl = TextEditingController(text: '12');
   final _collateralCtrl = TextEditingController();
 
+  String? _selectedCollateralType;
+  final List<String> _collateralOptions = const [
+    'Title Deed (Land Ownership)',
+    'Logbook (Vehicle / Tractor / Farm Machinery)',
+    'Livestock & Herd Chattel Certificate',
+    'Crop Harvest & Off-take Supply Contract',
+    'Fixed Deposit / Savings Guarantee',
+    'Group / Personal Guarantor Agreement',
+    'Other Agricultural Asset',
+  ];
+
   bool _submitting = false;
   bool _checkingEligibility = false;
   Map<String, dynamic>? _eligibility;
@@ -132,12 +143,16 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
       _error = null;
     });
     try {
+      final collateralText = _selectedCollateralType != null
+          ? '${_selectedCollateralType!}${_collateralCtrl.text.trim().isNotEmpty ? " · Reference: ${_collateralCtrl.text.trim()}" : ""}'
+          : _collateralCtrl.text.trim();
+
       final res = await ApiService.post('/api/loans', body: {
-        'amount_requested': double.parse(_amountCtrl.text),
+        'amount_requested': double.parse(_amountCtrl.text.replaceAll(',', '')),
         'purpose': _purposeCtrl.text.trim(),
         'repayment_period_months': int.parse(_periodCtrl.text),
         'branch_id': _selectedBranchId,
-        'collateral': _collateralCtrl.text.trim(),
+        'collateral': collateralText,
       });
       if (!mounted) return;
       final loan = res['loan'];
@@ -301,19 +316,34 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                     : null,
               ),
               const SizedBox(height: 20),
-              Text('Collateral description',
+              Text('Collateral Type & Security',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedCollateralType,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  hintText: 'Select Collateral / Security Type',
+                  prefixIcon: Icon(Icons.security_outlined),
+                ),
+                items: _collateralOptions
+                    .map<DropdownMenuItem<String>>((c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(c, overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedCollateralType = v),
+                validator: (v) => v == null ? 'Select collateral type' : null,
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _collateralCtrl,
                 textCapitalization: TextCapitalization.sentences,
                 inputFormatters: const [CapitalizeFirstLetterFormatter()],
                 decoration: const InputDecoration(
+                    labelText: 'Collateral Ref / Document No. (optional)',
                     hintText:
-                        'e.g. Land Title Deed No. 12345 or Toyota Logbook'),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Please describe the collateral offered'
-                    : null,
+                        'e.g. Title Deed No. LR/12345/Nairobi or Logbook Reg KCF 123X'),
               ),
               const SizedBox(height: 20),
               Text('AFC Branch', style: Theme.of(context).textTheme.titleLarge),

@@ -40,10 +40,10 @@ router.post('/assistant/ask', async (req, res) => {
     }
 
     // 1. Detect 1 shilling / low amount queries
-    if (rawText.includes('1 bob') || rawText.includes('1 shilling') || rawText.includes('1 ksh') || rawText.includes('ksh 1') || rawText.includes('shilling 1')) {
+    if (rawText.includes('1 bob') || rawText.includes('1 shilling') || rawText.includes('1 ksh') || rawText.includes('ksh 1') || rawText.includes('shilling 1') || rawText.includes('500') || rawText.includes('1000')) {
       const reply = lang === 'sw'
-        ? 'Mikopo ya kilimo ya VunaFlow inaanzia KSh 1,000 hadi KSh 1,000,000. Maombi ya chini ya KSh 1,000 (kama vile KSh 1 au KSh 500) hayakidhi kiwango cha chini cha mkopo wa kilimo na hayastahili kuidhinishwa. Tafadhali omba KSh 1,000 au zaidi.'
-        : 'VunaFlow agricultural & livestock loans range from a minimum of KSh 1,000 to a maximum of KSh 1,000,000. Requests under KSh 1,000 (such as KSh 1 or KSh 500) do not meet agricultural financing thresholds. Please apply for KSh 1,000 or above.';
+        ? 'Mikopo ya kilimo ya VunaFlow inaanzia kiwango cha chini cha KSh 100,000 hadi KSh 1,000,000. Maombi ya chini ya KSh 100,000 (kama vile KSh 1 au KSh 50,000) hayakidhi kiwango cha chini cha mkopo wa kilimo wa VunaFlow.'
+        : 'VunaFlow agricultural & livestock loans range from a minimum of KSh 100,000 to a maximum of KSh 1,000,000. Requests under KSh 100,000 do not meet agricultural financing thresholds. Please apply for KSh 100,000 or above.';
       return res.json({ answer: reply, matched_question: 'Minimum Loan Limit' });
     }
 
@@ -51,7 +51,7 @@ router.post('/assistant/ask', async (req, res) => {
     const numMatches = rawText.match(/(\d[\d,]*)/g);
     if (numMatches && (rawText.includes('interest') || rawText.includes('repay') || rawText.includes('pay') || rawText.includes('calculate') || rawText.includes('riba') || rawText.includes('lipa') || rawText.includes('hesabu'))) {
       const parsedVal = parseFloat(numMatches[0].replace(/,/g, ''));
-      if (parsedVal >= 1000) {
+      if (parsedVal >= 100000) {
         const annualRate = 0.12;
         const totalWithInterest = parsedVal * (1 + annualRate);
         const monthly12 = (totalWithInterest / 12).toFixed(0);
@@ -74,8 +74,8 @@ router.post('/assistant/ask', async (req, res) => {
     // 3. Detect eligibility queries
     if (rawText.includes('eligible') || rawText.includes('eligibility') || rawText.includes('qualify') || rawText.includes('sifa') || rawText.includes('stahiki')) {
       const reply = lang === 'sw'
-        ? 'Sifa za kupata mkopo wa VunaFlow: 1) Umri kuanzia miaka 18+. 2) Mkopo uwe KSh 1,000 hadi KSh 1,000,000. 3) Ukubwa wa shamba kuanzia ekari 2 au umiliki wa mifugo. 4) Hati halali ya ardhini/mkataba au kitambulisho.'
-        : 'VunaFlow Eligibility Criteria: 1) Age 18 or older. 2) Loan amount between KSh 1,000 and KSh 1,000,000. 3) Minimum 2 acres of farmland or verified livestock ownership. 4) Valid National ID/KRA Pin and land title/lease or collateral document.';
+        ? 'Sifa za kupata mkopo wa VunaFlow: 1) Umri kuanzia miaka 18+. 2) Mkopo uwe KSh 100,000 hadi KSh 1,000,000. 3) Ukubwa wa shamba kuanzia ekari 2 au umiliki wa mifugo. 4) Hati halali ya ardhini/mkataba au dhamana.'
+        : 'VunaFlow Eligibility Criteria: 1) Age 18 or older. 2) Loan amount between KSh 100,000 and KSh 1,000,000. 3) Minimum 2 acres of farmland or verified livestock ownership. 4) Valid National ID/KRA Pin and land title/lease or collateral document.';
       return res.json({ answer: reply, matched_question: 'Loan Eligibility Criteria' });
     }
 

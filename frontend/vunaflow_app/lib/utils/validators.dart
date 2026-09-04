@@ -162,12 +162,12 @@ bool isAtLeast18(DateTime dob) {
   return age >= 18;
 }
 
-/// Validates a requested loan amount: minimum KSh 1,000, maximum KSh 1,000,000.
+/// Validates a requested loan amount: minimum KSh 100,000, maximum KSh 1,000,000.
 String? validateLoanAmount(String? value) {
   if (value == null || value.trim().isEmpty) return 'Enter loan amount';
   final amount = double.tryParse(value.replaceAll(',', '').trim());
   if (amount == null) return 'Enter a valid amount';
-  if (amount < 1000) return 'Minimum loan amount is KSh 1,000';
+  if (amount < 100000) return 'Minimum loan amount is KSh 100,000';
   if (amount > 1000000) return 'Maximum loan amount is KSh 1,000,000';
   return null;
 }
