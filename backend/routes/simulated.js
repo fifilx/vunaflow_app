@@ -29,20 +29,62 @@ router.post('/assistant/ask', async (req, res) => {
   if (!message || !message.trim()) return res.status(400).json({ error: 'message is required' });
 
   try {
+    const rawText = message.toLowerCase().trim();
+
     if (isGreeting(message)) {
       const greetingReply =
         lang === 'sw'
-          ? 'Habari! Mimi ni Msaidizi wa VunaFlow. Ninaweza kukusaidiaje leo? Unaweza kuniuliza kuhusu kuomba mkopo, hati zinazohitajika, viwango vya riba, na zaidi.'
-          : "Hello! I'm the VunaFlow Assistant. How can I help you today? You can ask me about applying for a loan, required documents, interest rates, and more.";
+          ? 'Habari! Mimi ni Msaidizi wa VunaFlow. Ninaweza kukusaidia kuhusu mikopo ya kilimo na mifugo, mahitaji ya hati, hesabu za riba na marejesho, au kuangalia hali ya mkopo wako. Nani nikusaidie na nini?'
+          : "Hello! I'm your VunaFlow AI Assistant. I can help you with agricultural & livestock credit, document requirements, interest calculations, or checking eligibility. How may I assist you today?";
       return res.json({ answer: greetingReply, matched_question: null });
     }
 
+    // 1. Detect 1 shilling / low amount queries
+    if (rawText.includes('1 bob') || rawText.includes('1 shilling') || rawText.includes('1 ksh') || rawText.includes('ksh 1') || rawText.includes('shilling 1')) {
+      const reply = lang === 'sw'
+        ? 'Mikopo ya kilimo ya VunaFlow inaanzia KSh 1,000 hadi KSh 1,000,000. Maombi ya chini ya KSh 1,000 (kama vile KSh 1 au KSh 500) hayakidhi kiwango cha chini cha mkopo wa kilimo na hayastahili kuidhinishwa. Tafadhali omba KSh 1,000 au zaidi.'
+        : 'VunaFlow agricultural & livestock loans range from a minimum of KSh 1,000 to a maximum of KSh 1,000,000. Requests under KSh 1,000 (such as KSh 1 or KSh 500) do not meet agricultural financing thresholds. Please apply for KSh 1,000 or above.';
+      return res.json({ answer: reply, matched_question: 'Minimum Loan Limit' });
+    }
+
+    // 2. Detect calculation / repayment schedule intent with numbers
+    const numMatches = rawText.match(/(\d[\d,]*)/g);
+    if (numMatches && (rawText.includes('interest') || rawText.includes('repay') || rawText.includes('pay') || rawText.includes('calculate') || rawText.includes('riba') || rawText.includes('lipa') || rawText.includes('hesabu'))) {
+      const parsedVal = parseFloat(numMatches[0].replace(/,/g, ''));
+      if (parsedVal >= 1000) {
+        const annualRate = 0.12;
+        const totalWithInterest = parsedVal * (1 + annualRate);
+        const monthly12 = (totalWithInterest / 12).toFixed(0);
+        const monthly6 = (parsedVal * (1 + 0.06) / 6).toFixed(0);
+
+        const reply = lang === 'sw'
+          ? `Kwa mkopo wa KSh ${parsedVal.toLocaleString()}:
+• Riba ya Mwaka: 12% p.a. (1% kwa mwezi)
+• Marejesho ya miezi 6: takriban KSh ${parseInt(monthly6).toLocaleString()} kwa mwezi
+• Marejesho ya miezi 12: takriban KSh ${parseInt(monthly12).toLocaleString()} kwa mwezi (Jumla: KSh ${parseInt(totalWithInterest).toLocaleString()}).`
+          : `For a loan of KSh ${parsedVal.toLocaleString()}:
+• Interest Rate: 12% p.a. (1% per month)
+• 6-Month Tenure: approx KSh ${parseInt(monthly6).toLocaleString()}/month
+• 12-Month Tenure: approx KSh ${parseInt(monthly12).toLocaleString()}/month (Total Repayment: KSh ${parseInt(totalWithInterest).toLocaleString()}).`;
+
+        return res.json({ answer: reply, matched_question: 'Loan Calculation' });
+      }
+    }
+
+    // 3. Detect eligibility queries
+    if (rawText.includes('eligible') || rawText.includes('eligibility') || rawText.includes('qualify') || rawText.includes('sifa') || rawText.includes('stahiki')) {
+      const reply = lang === 'sw'
+        ? 'Sifa za kupata mkopo wa VunaFlow: 1) Umri kuanzia miaka 18+. 2) Mkopo uwe KSh 1,000 hadi KSh 1,000,000. 3) Ukubwa wa shamba kuanzia ekari 2 au umiliki wa mifugo. 4) Hati halali ya ardhini/mkataba au kitambulisho.'
+        : 'VunaFlow Eligibility Criteria: 1) Age 18 or older. 2) Loan amount between KSh 1,000 and KSh 1,000,000. 3) Minimum 2 acres of farmland or verified livestock ownership. 4) Valid National ID/KRA Pin and land title/lease or collateral document.';
+      return res.json({ answer: reply, matched_question: 'Loan Eligibility Criteria' });
+    }
+
+    // 4. Database FAQ match fallback
     const faqs = await pool.query('SELECT * FROM faqs');
-    const text = message.toLowerCase();
     const match = faqs.rows.find(
       (f) =>
-        text.includes(f.keyword.toLowerCase()) ||
-        (f.keyword_sw && text.includes(f.keyword_sw.toLowerCase()))
+        rawText.includes(f.keyword.toLowerCase()) ||
+        (f.keyword_sw && rawText.includes(f.keyword_sw.toLowerCase()))
     );
 
     if (match) {
@@ -53,8 +95,8 @@ router.post('/assistant/ask', async (req, res) => {
 
     const fallback =
       lang === 'sw'
-        ? 'Sijui kuhusu hilo bado. Jaribu kuuliza kuhusu jinsi ya kuomba, hati zinazohitajika, viwango vya riba, kiwango cha chini cha mkopo, sifa, ufuatiliaji wa maombi, au tawi. Unaweza pia kutembelea tawi lako la karibu la AFC kwa msaada zaidi.'
-        : "I'm not sure about that yet. Try asking about how to apply, required documents, interest rates, minimum loan amount, eligibility, tracking your application, or choosing a branch. You can also visit your nearest AFC branch for further help.";
+        ? 'Ninawezaje kukusaidia vizuri zaidi? Jaribu kuuliza kuhusu: 1) Jinsi ya kuomba mkopo. 2) Sifa na kiwango cha chini (KSh 1,000). 3) Hesabu ya marejesho. 4) Hati zinazohitajika kama vile kitambulisho au hati ya shamba.'
+        : "How can I better assist you? You can ask about: 1) How to apply for a loan. 2) Eligibility and minimum limits (KSh 1,000). 3) Repayment and interest calculations. 4) Required documents (ID, Land title/lease).";
 
     res.json({ answer: fallback, matched_question: null });
   } catch (err) {

@@ -37,7 +37,13 @@ class StaffAdminTab extends StatelessWidget {
             children: [
               Icon(Icons.spa_outlined, color: Color(0xFFD4AF37), size: 22),
               SizedBox(width: 8),
-              Text('Admin Console', style: TextStyle(fontWeight: FontWeight.w600)),
+              Flexible(
+                child: Text(
+                  'Admin Console',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           actions: const [ThemeToggleButton(), LogoutButton()],

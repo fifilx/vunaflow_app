@@ -282,14 +282,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                 decoration: const InputDecoration(
                     hintText: 'e.g. 250000', prefixText: 'KSh '),
                 onChanged: (_) => setState(() {}),
-                validator: (v) {
-                  final amount = double.tryParse(v ?? '');
-                  if (amount == null) return 'Enter a valid amount';
-                  if (amount < 100000) {
-                    return 'Loan amount must be at least KSh 100,000';
-                  }
-                  return null;
-                },
+                validator: validateLoanAmount,
               ),
               const SizedBox(height: 20),
               Text('Purpose of Loan',

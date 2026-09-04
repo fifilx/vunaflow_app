@@ -135,8 +135,7 @@ class _AssistantScreenState extends State<AssistantScreen> with TickerProviderSt
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 32,
-              height: 32,
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF10B981), Color(0xFF059669)],
@@ -147,49 +146,49 @@ class _AssistantScreenState extends State<AssistantScreen> with TickerProviderSt
               ),
               child: const Icon(Icons.auto_awesome, color: Colors.white, size: 17),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'VunaFlow AI',
-                  style: GoogleFonts.publicSans(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-                ),
-                Row(
-                  children: [
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF34D399))),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Online · Agrifinance Advisor',
-                      style: GoogleFonts.publicSans(fontSize: 10.5, color: const Color(0xFFD1FAE5)),
-                    ),
-                  ],
-                ),
-              ],
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'VunaFlow AI',
+                    style: GoogleFonts.publicSans(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF34D399))),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Online · Agrifinance Advisor',
+                          style: GoogleFonts.publicSans(fontSize: 10.5, color: const Color(0xFFD1FAE5)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         actions: [
-          // Language switcher pill
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: OutlinedButton(
-              onPressed: _toggleLanguage,
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0x55FFFFFF)),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.translate, size: 14, color: Color(0xFFD4AF37)),
-                  const SizedBox(width: 5),
-                  Text(_lang == 'en' ? 'EN' : 'SW', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                ],
-              ),
+          // Compact Language switcher button
+          IconButton(
+            icon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.translate, size: 14, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 2),
+                Text(_lang == 'en' ? 'EN' : 'SW', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+              ],
             ),
+            tooltip: 'Switch Language',
+            onPressed: _toggleLanguage,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.white),

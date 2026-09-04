@@ -94,69 +94,65 @@ class _NavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSw = lang == 'sw';
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 600;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF122318),
-        border: Border(bottom: BorderSide(color: Color(0x28FFFFFF))),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo — shrink slightly on very small screens
-          Flexible(
-            child: VunaFlowLogo(
-              size: isMobile ? 28 : 36,
-              showWordmark: !isMobile || MediaQuery.of(context).size.width > 360,
-              textColor: Colors.white,
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF122318),
+          border: Border(bottom: BorderSide(color: Color(0x28FFFFFF))),
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 12 : (isMobile ? 18 : 48),
+          vertical: isCompact ? 8 : 12,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Logo — shrink slightly on small screens
+            Flexible(
+              child: VunaFlowLogo(
+                size: isCompact ? 24 : (isMobile ? 28 : 36),
+                showWordmark: screenWidth > 320,
+                textColor: Colors.white,
+              ),
             ),
-          ),
-          if (!isMobile)
+            if (!isMobile)
+              Row(
+                children: [
+                  _NavLink(isSw ? 'Nyumbani' : 'Home', () {}),
+                  const SizedBox(width: 24),
+                  _NavLink(isSw ? 'Vipengele' : 'Features', onFeatures),
+                  const SizedBox(width: 24),
+                  _NavLink(isSw ? 'Mazao & Mifugo' : 'Farms & Livestock', onGallery),
+                  const SizedBox(width: 24),
+                  _NavLink(isSw ? 'Mawasiliano' : 'Contact', onContact),
+                ],
+              ),
+            // Right actions — on mobile use a compact pill menu that cannot overflow
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _NavLink(isSw ? 'Nyumbani' : 'Home', () {}),
-                const SizedBox(width: 28),
-                _NavLink(isSw ? 'Vipengele' : 'Features', onFeatures),
-                const SizedBox(width: 28),
-                _NavLink(isSw ? 'Mazao & Mifugo' : 'Farms & Livestock', onGallery),
-                const SizedBox(width: 28),
-                _NavLink(isSw ? 'Mawasiliano' : 'Contact', onContact),
-              ],
-            ),
-          // Right actions — on mobile use a compact row that cannot overflow
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Language toggle — icon-only on mobile
-              InkWell(
-                onTap: onLanguageToggle,
-                borderRadius: BorderRadius.circular(100),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 8 : 12,
-                    vertical: isMobile ? 6 : 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.language, size: 16, color: AppColors.goldPale),
-                      if (!isMobile) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          isSw ? 'Kiswahili' : 'English',
-                          style: GoogleFonts.publicSans(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.goldPale,
-                          ),
-                        ),
-                      ] else ...[
+                // Language toggle chip
+                InkWell(
+                  onTap: onLanguageToggle,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompact ? 8 : 12,
+                      vertical: isCompact ? 5 : 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.language, size: 14, color: AppColors.goldPale),
                         const SizedBox(width: 4),
                         Text(
                           isSw ? 'SW' : 'EN',
@@ -167,61 +163,117 @@ class _NavBar extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: isCompact ? 6 : 10),
+
+                if (isCompact) ...[
+                  // Compact dropdown login selector on small phones
+                  PopupMenuButton<String>(
+                    onSelected: (val) {
+                      if (val == 'client') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ClientLoginScreen()),
+                        );
+                      } else if (val == 'staff') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const StaffLoginScreen()),
+                        );
+                      }
+                    },
+                    padding: EdgeInsets.zero,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isSw ? 'Ingia' : 'Login',
+                            style: GoogleFonts.publicSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF122318),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF122318)),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'client',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.person_outlined, size: 18, color: Color(0xFF133826)),
+                            const SizedBox(width: 8),
+                            Text(isSw ? 'Mkulima (Client)' : 'Client Portal'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'staff',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.badge_outlined, size: 18, color: Color(0xFF133826)),
+                            const SizedBox(width: 8),
+                            Text(isSw ? 'Afisa (Staff)' : 'Staff Portal'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ),
-              SizedBox(width: isMobile ? 8 : 12),
-              // Client login button
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ClientLoginScreen()),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white60),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 10 : 16,
-                    vertical: isMobile ? 7 : 10,
+                ] else ...[
+                  // Tablet / Desktop separate buttons
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ClientLoginScreen()),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white60),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      isSw ? 'Mkulima' : 'Client',
+                      style: const TextStyle(fontSize: 13),
+                    ),
                   ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  minimumSize: Size.zero,
-                ),
-                child: Text(
-                  isSw ? 'Mkulima' : 'Client',
-                  style: TextStyle(fontSize: isMobile ? 12 : 14),
-                ),
-              ),
-              SizedBox(width: isMobile ? 6 : 10),
-              // Staff login button
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const StaffLoginScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.shamba900,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 10 : 16,
-                    vertical: isMobile ? 7 : 10,
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const StaffLoginScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.gold,
+                      foregroundColor: const Color(0xFF122318),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      isSw ? 'Afisa' : 'Staff',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                    ),
                   ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  minimumSize: Size.zero,
-                ),
-                child: Text(
-                  isSw ? 'Afisa' : 'Staff',
-                  style: TextStyle(fontSize: isMobile ? 12 : 14),
-                ),
-              ),
-            ],
-          ),
-        ],
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

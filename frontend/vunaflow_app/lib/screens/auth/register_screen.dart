@@ -502,9 +502,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ink),
                           )
-                        : Text(
-                            _activeStep == 0 ? 'Continue to Security →' : 'Create Account & Start Loan',
-                            style: GoogleFonts.publicSans(fontSize: 15, fontWeight: FontWeight.w700),
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _activeStep == 0 ? 'Continue to Security →' : 'Create Account & Start Loan',
+                              style: GoogleFonts.publicSans(fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
                           ),
                   ),
                 ),
