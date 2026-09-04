@@ -69,7 +69,13 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
           children: [
             Icon(Icons.spa_outlined, color: Color(0xFFD4AF37), size: 22),
             SizedBox(width: 8),
-            Text('Reports & Analytics', style: TextStyle(fontWeight: FontWeight.w600)),
+            Flexible(
+              child: Text(
+                'Reports & Analytics',
+                style: TextStyle(fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: const [ThemeToggleButton(), LogoutButton()],
@@ -105,7 +111,7 @@ class _StaffReportsTabState extends State<StaffReportsTab> {
                               crossAxisCount: width < 480 ? 2 : (width < 768 ? 3 : 6),
                               mainAxisSpacing: 10,
                               crossAxisSpacing: 10,
-                              mainAxisExtent: 78,
+                              mainAxisExtent: 84,
                             ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -269,11 +275,13 @@ class _ReportStat extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            value,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color),
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -433,7 +441,16 @@ class _LoanAmountsCard extends StatelessWidget {
           children: [
             Flexible(child: Text(label, style: const TextStyle(fontSize: 13.5), overflow: TextOverflow.ellipsis)),
             const SizedBox(width: 8),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                ),
+              ),
+            ),
           ],
         ),
       );
